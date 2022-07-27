@@ -1,0 +1,12 @@
+[default]
+SQLALCHEMY_DATABASE_URI = "mysql://root:1234@localhost/mimoso"
+TITLE = "Api"
+SCRET_KEY = "74hhe9joeir03oi'f03j"
+EXTENSIONS = [
+    "vite.extension.database:init_app",
+    "vite.extension.command:init_app",
+    "vite.blueprint.webui:init_app",
+    "vite.blueprint.restapi:init_app"
+]
+
+[production]
