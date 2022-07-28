@@ -27,6 +27,7 @@ class AbrirCaixa(db.Model, SerializerMixin):
     usuario_id = db.Column(db.Integer,nullable=False)
     total = db.Column(db.Integer,nullable=False)
     
+    
 
 class FecharCaixa(db.Model, SerializerMixin):
     id = db.Column(db.Integer,primary_key=True,autoincrement=True)
@@ -41,7 +42,7 @@ class PedidoVenda(db.Model,SerializerMixin):
     data = db.Column(db.DateTime,nullable=False)
     quantidade = db.Column(db.Integer,nullable=False)
     total = db.Column(db.Integer,nullable=False)
-    itensPedidoVenda = db.Column(db.Integer)
+    itensPedidoVenda_id = db.Column(db.Integer)
 
 class ItensPedidoVenda(db.Model,SerializerMixin):
     id = db.Column(db.Integer,primary_key=True,autoincrement=True)
@@ -79,7 +80,7 @@ class Sabor(db.Model, SerializerMixin):
 class Calda(db.Model, SerializerMixin):
     id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),nullable=False)
-    descricao_sabor = db.Column(db.Text,nullable=False)
+    descricao_calda                                                    = db.Column(db.Text,nullable=False)
     
  
  
