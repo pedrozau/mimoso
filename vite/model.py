@@ -3,23 +3,25 @@ from sqlalchemy_serializer import SerializerMixin
 
 
 class User(db.Model,SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    usuario_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),unique=True)
+    email = db.Column(db.String(30),unique=True)
     senha = db.Column(db.String(250),nullable=False) 
     foto = db.Column(db.String(30),nullable=False)
-    tipo_usuario = db.Column(db.String(30),nullable=False)
+    tipo_usuario = db.Column(db.String(30),nullable=False) 
+    token = db.Column(db.String(300),nullable=False)  
     
 class Venda(db.Model,SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    venda_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     data = db.Column(db.DateTime,nullable=False)
-    pedido_id = db.Column(db.Integer,nullable=False)
-    usuario_id = db.Column(db.Integer,nullable=False)
+    pedidovenda_id = db.Column(db.Integer,nullable=False)
+    usuario_id = db.Column(db.Integer)
     valor = db.Column(db.Integer,nullable=False)
     
     
 
 class AbrirCaixa(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    abrircaixa_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     sumplemento = db.Column(db.Integer,nullable=False)
     despsas = db.Column(db.Integer,nullable=False)
     valorInicial = db.Column(db.Integer,nullable=False)
@@ -30,7 +32,7 @@ class AbrirCaixa(db.Model, SerializerMixin):
     
 
 class FecharCaixa(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    fecharcaixa_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     despsas = db.Column(db.Integer,nullable=False)
     dataFechamento = db.Column(db.DateTime,nullable=False)
     usuario_id = db.Column(db.Integer,nullable=False)
@@ -38,19 +40,19 @@ class FecharCaixa(db.Model, SerializerMixin):
     
 
 class PedidoVenda(db.Model,SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    pedidovenda_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     data = db.Column(db.DateTime,nullable=False)
     quantidade = db.Column(db.Integer,nullable=False)
     total = db.Column(db.Integer,nullable=False)
     itensPedidoVenda_id = db.Column(db.Integer)
 
 class ItensPedidoVenda(db.Model,SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    itenspedidovenda_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     produto_id = db.Column(db.Integer)
     quantidade = db.Column(db.Integer)
     
 class Produto(db.Model,SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    produto_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     produto_nome = db.Column(db.String(30),nullable=False)
     preco = db.Column(db.Integer,nullable=False)
     descricao_produto = db.Column(db.Text,nullable=False)
@@ -62,25 +64,26 @@ class Produto(db.Model,SerializerMixin):
      
 
 class Categoria(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    categoria_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),nullable=False)
+   
 
 class Golusemas(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    golusemas_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),nullable=False)
     unidade = db.Column(db.String(10),nullable=False)
     
 
 class Sabor(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    sabor_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),nullable=False)
     descricao_sabor = db.Column(db.Text,nullable=False)
     
 
 class Calda(db.Model, SerializerMixin):
-    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    calda_id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     nome = db.Column(db.String(30),nullable=False)
-    descricao_calda                                                    = db.Column(db.Text,nullable=False)
+    descricao_calda = db.Column(db.Text,nullable=False)
     
  
  
