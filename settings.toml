@@ -1,11 +1,14 @@
 [default]
-SQLALCHEMY_DATABASE_URI = "postgresql://postgres:1python1@localhost/mimoso"
+
 TITLE = "Api"
 EXTENSIONS = [
     "vite.extension.database:init_app",
+    "vite.extension.docs:init_app",
     "vite.extension.command:init_app",
     "vite.blueprint.webui:init_app",
     "vite.blueprint.restapi:init_app"
 ]
 
 [production]
+SQLALCHEMY_DATABASE_URI = "postgresql://rjeejkdozvgjhz:ebeed42c23c4231082931a246650049f9a1a0cf3d2e9a92224e24adb27d66b38@ec2-107-22-122-106.compute-1.amazonaws.com/daqd5gftkiu5r2"
+
