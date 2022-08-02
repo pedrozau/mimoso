@@ -15,4 +15,7 @@ def create_app(**config):
     command.create_db()
     return app
 
+app = create_app()
+if __name__ == "__main__":
+    app.run(hos="0.0.0.0",port=80)
 #SQLALCHEMY_DATABASE_URI = "postgresql://postgres:1python1@localhost/mimoso"
