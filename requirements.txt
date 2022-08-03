@@ -1,6 +1,7 @@
 tea==0.1.7
 Bcrypt_Flask==1.0.2
 dynaconf==3.1.9
+python-dotenv==0.20.0
 Flask==2.0.1
 flask_bcrypt==1.0.1
 Flask_RESTful==0.3.9
