@@ -14,17 +14,19 @@ from vite.model import Categoria
 from vite.model import Golusemas
 from vite.model import Sabor
 from vite.model import Calda
-from .action import generate_token
-from .action import token_required 
+from .token import generate_token
+from .token import token_required 
+from os import path
+from werkzeug.utils import secure_filename
+import werkzeug 
 
-import werkzeug
 
 
 """ 
 variavel para directorio 
 
 """
-UPLOAD_DIR = ""
+UPLOAD_DIR = "../../static/"
 
 
 """
@@ -90,7 +92,11 @@ class Usuario(Resource):
 
     @token_required
     def get(self):
-        user = User.query.all()
+        self.parser.add_argument('page')
+        args = self.parser.parse_args()
+        page = args.get('page')
+        
+        user = User.query.paginate(page=page,per_page=5)
         return jsonify({"users": [users.to_dict()for users in user]})
     
     def remove_space(self,value):
@@ -171,17 +177,24 @@ class Usuario(Resource):
                 "message_error": "problema ao atualizar os dados"
             })
             
+""" 
+Routa para ulpad de arquivos de image de usuario 
+"""            
 class UploadFile(Resource):
     
     def __init__(self):
         self.parser = reqparse.RequestParser()
     
     def post(self):
-         self.parser.add_argument("file", type=werkzeug.datastructures.FileStorage, location='files')
+         self.parser.add_argument("arq", type=werkzeug.datastructures.FileStorage, location='files')
          args = self.parser.parse_args() 
+         arq = args.get("arq")
          
-         file = args.get("file")
-         print(file.filename)
+         arq.save(path.join(UPLOAD_DIR,secure_filename(arq.filename)))
+         
+         return jsonify({
+              "message_error":arq
+          })
          
         
            
@@ -989,6 +1002,7 @@ class SearchCategoria(Resource):
             
         })
         
+        
 """
 Routa para buscar golusemas 
 """     
@@ -998,7 +1012,7 @@ class SearchGoluma(Resource):
     
     def post(self):
         data = request.get_json()
-        gol = Golosemas.query.fiter_by(nome=data['nome']).first()
+        gol = Golusemas.query.fiter_by(nome=data['nome']).first()
         return jsonify({
             "golusemas_id":gol.golusemas_id,
             "nome":gol.nome,

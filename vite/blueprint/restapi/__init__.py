@@ -20,7 +20,12 @@ from .resources import UploadFile
 
 bp = Blueprint("restapi",__name__,url_prefix="/api/v1")
 
+
 api = Api(bp) 
+
+"""
+Adicionando routas na minha blueprint  
+"""
 api.add_resource(Login,"/auth/login")
 api.add_resource(Usuario,"/users","/user/<int:id>")
 api.add_resource(Vendas,"/vendas","/venda/<int:id>")

@@ -1,6 +1,8 @@
 [default]
-DEBUG = false
-TITLE = "Api"
+
+SQLALCHEMY_DATABASE_URI = "postgresql://postgres:1python1@localhost/mimoso"
+
+TITLE = "Api mimoso"
 EXTENSIONS = [
     "vite.extension.database:init_app",
     "vite.extension.docs:init_app",

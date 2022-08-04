@@ -1,6 +1,6 @@
 from flask import Flask 
 from  vite.extension import configuration 
- 
+
 
 
 
@@ -17,4 +17,3 @@ def create_app(**config):
     return app
 
 
-#SQLALCHEMY_DATABASE_URI = "postgresql://postgres:1python1@localhost/mimoso"
