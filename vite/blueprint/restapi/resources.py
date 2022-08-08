@@ -93,11 +93,16 @@ class Usuario(Resource):
     @token_required
     def get(self):
         self.parser.add_argument('page')
+        self.parser.add_argument('limit')
         args = self.parser.parse_args()
-        page = args.get('page')
+        page = int(args.get('page'))
+        limit = int(args.get('limit'))
+        if not page:
+            page = 1
         
-        user = User.query.paginate(page=page,per_page=5)
-        return jsonify({"users": [users.to_dict()for users in user]})
+        user = User.query.paginate(page=page,per_page=limit)
+        return jsonify({"users": [users.to_dict()for users in user.items]})
+        
     
     def remove_space(self,value):
         return value.replace(" ","")
@@ -189,7 +194,7 @@ class UploadFile(Resource):
          self.parser.add_argument("arq", type=werkzeug.datastructures.FileStorage, location='files')
          args = self.parser.parse_args() 
          arq = args.get("arq")
-         
+         #arq = request.files['arq']
          arq.save(path.join(UPLOAD_DIR,secure_filename(arq.filename)))
          
          return jsonify({
@@ -205,11 +210,19 @@ Routa para vendas  method get put post delete
 
 
 class Vendas(Resource):
+    
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
 
     @token_required
     def get(self):
-        vendas = Venda.query.all()
-        return jsonify({"vendas": [sell.to_dict()for sell in vendas]})
+        self.parser.add_argument('page') 
+        self.parser.add_argument('limit')
+        args = self.parser.parse_args()
+        page = int(args.get('page'))
+        limit = int(args.get('limit'))
+        vendas = Venda.query.paginate(page=page,per_page=limit)
+        return jsonify({"vendas": [sell.to_dict()for sell in vendas.items]})
 
     @token_required
     def post(self):
@@ -335,7 +348,7 @@ class AbrirCaixas(Resource):
             acaixa_update.total = data['total']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não foi informado os dados"
             })
         try:
             db.session.add(acaixa_update)
@@ -343,10 +356,10 @@ class AbrirCaixas(Resource):
             return jsonify({
                 "message_error": "atualizou com sucesso"
             })
-        except Exception as error:
-            print(error)
+        except Exception:
+            
             return jsonify({
-                "message_error": error
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -373,27 +386,26 @@ class FecharCaixas(Resource):
                 despsas=data['despesas'], dataFechamento=data['data_fechamento'], usuario_id=data['usuario_id'], total=data['total'])
             db.session.add(fecharcaixa)
             db.session.commit()
+            message_error = "cadastrado com sucesso"
         except Exception:
-            message_error = "4743"
+            message_error = "não cadastrado com sucesso"
 
         return jsonify({
             "message_error": message_error
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         fecharcaixa = FecharCaixa.query.filter_by(venda_id=id).first()
         if fecharcaixa is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não foi encontrado"})
         try:
             db.session.delete(fecharcaixa)
             db.session.commit()
-            return jsonify({"message_error": "user not found"})
+            return jsonify({"message_error": "cadastrou com sucesso"})
         except Exception:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não cadastrou com sucesso"})
 
     @token_required
     def put(self, id):
@@ -410,14 +422,17 @@ class FecharCaixas(Resource):
             fcaixa_update.total = data['total']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(fcaixa_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -427,12 +442,20 @@ Routa para PedidoVenda  method get put post delete
 
 
 class PedidoVendas(Resource):
+    
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
 
     @token_required
     def get(self):
-        pedidovenda = PedidoVenda.query.all()
+        self.parser.add_argument('page')
+        self.parser.add_argument('limit')
+        args = self.parser.parse_args()
+        page = args.get('page')
+        limit = args.get('limit')
+        pedidovenda = PedidoVenda.query.paginate(page=page,per_page=limit)
         return jsonify({
-            "pedido_venda": [pvenda.to_dict() for pvenda in pedidovenda]
+            "pedido_venda": [pvenda.to_dict() for pvenda in pedidovenda.items]
         })
 
     @token_required
@@ -454,19 +477,17 @@ class PedidoVendas(Resource):
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         pedidovenda = PedidoVenda.query.filter_by(venda_id=id).first()
         if pedidovenda is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não foi encontrado"})
         try:
             db.session.delete(pedidovenda)
             db.session.commit()
-            return jsonify({"message_error": "user not found"})
+            return jsonify({"message_error": "cadastrou com sucesso"})
         except Exception:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não cadastrou com sucesso"})
 
     @token_required
     def put(self, id):
@@ -483,14 +504,17 @@ class PedidoVendas(Resource):
             pv_update.itensPedidoVenda_id = data['itensPedidoVenda_id']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(pv_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atuaçizou com sucesso"
             })
 
 
@@ -500,12 +524,20 @@ Routa para ItensPedidoVendas   method get put post delete
 
 
 class ItensPedidoVendas(Resource):
+    
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
 
     @token_required
     def get(self):
-        itpvenda = ItensPedidoVenda.query.all()
+        self.parser.add_argument('page')
+        self.parser.add_argument('limit')
+        args = self.parser.parse_args() 
+        page = args.get('page')
+        limit = args.get('limit')
+        itpvenda = ItensPedidoVenda.query.paginate(page=page,per_page=limit)
         return jsonify({
-            "itens_pedido_venda": [itens.to_dict() for itens in itpvenda]
+            "itens_pedido_venda": [itens.to_dict() for itens in itpvenda.items]
         })
 
     @token_required
@@ -525,10 +557,8 @@ class ItensPedidoVendas(Resource):
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         itens = ItensPedidoVenda.query.filter_by(venda_id=id).first()
         if itens is None:
             jsonify({"message_error": "user not found"})
@@ -551,14 +581,17 @@ class ItensPedidoVendas(Resource):
             itpv_update.quantidade = data['quantidade']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(itpv_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -567,13 +600,21 @@ Routa para Produto   method get put post delete
 """
 
 
-class Produtos(Resource):
+class Produtos(Resource): 
+    
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
 
     @token_required
     def get(self):
-        produto = Produto.query.all()
+        self.parser.add_argument('page')
+        self.parser.add_argument('limit')
+        args = self.parser.parse_args()
+        page = args.get('page')
+        limit = args.get('limit')
+        produto = Produto.query.pagenate(page=page,per_page=limit)
         return jsonify({
-            "produto": [prod.to_dict() for prod in produto]
+            "produto": [prod.to_dict() for prod in produto.items]
         })
 
     @token_required
@@ -585,18 +626,16 @@ class Produtos(Resource):
                            categoria_id=data['categoria_id'], sabor_id=data['sabor_id'], caldo_id=data['caldo_id'], golusemas_id=data['golusemas_id'])
             db.session.add(prod)
             db.session.commit()
-            message_error = "1"
+            message_error = "atualizou com sucesso"
         except Exception:
-            message_error = "4743"
+            message_error = "não atualizou com sucesso"
         return jsonify({
             "message_error": message_error
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         prod = Produto.query.filter_by(venda_id=id).first()
         if prod is None:
             jsonify({"message_error": "user not found"})
@@ -630,14 +669,17 @@ class Produtos(Resource):
             produto_update.golusemas_id = data['golusemas_id']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(produto_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -663,21 +705,19 @@ class Categorias(Resource):
             categoria = Categoria(nome=data['nome'])
             db.session.add(categoria)
             db.session.commit()
-            message_error = "1"
+            message_error = "cadastrou com sucesso"
         except Exception:
-            message_error = "4743"
+            message_error = "não cadastrou com sucesso"
         return jsonify({
             "message_error": message_error
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         categoria = Categoria.query.filter_by(venda_id=id).first()
         if categoria is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "usuario não em encontrado"})
         try:
             db.session.delete(categoria)
             db.session.commit()
@@ -694,14 +734,17 @@ class Categorias(Resource):
             categoria_update.nome = data['nome']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados "
             })
         try:
             db.session.add(categoria_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -727,26 +770,24 @@ class Golusemase(Resource):
             golusemas = Golusemas(nome=data['nome'], unidade=data['unidade'])
             db.session.add(golusemas)
             db.session.commit()
-            message_error = "1"
+            message_error = "cadastrou com sucesso"
         except Exception:
-            message_error = "4743"
+            message_error = "não cadasrou com sucesso"
 
         return jsonify({
             "message_error": message_error
         })
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
+    def delete(self,id):
+        
         goluse = Golusemas.query.filter_by(venda_id=id).first()
         if goluse is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "usuario não existe no sistema"})
         try:
             db.session.delete(goluse)
             db.session.commit()
-            return jsonify({"message_error": "user not found"})
+            return jsonify({"message_error": "deletou com sucesso"})
         except Exception:
             jsonify({"message_error": "user not found"})
 
@@ -754,21 +795,24 @@ class Golusemase(Resource):
     def put(self, id):
         golusema_update = Golusemas.query.filter_by(golusemas_id=id).first()
         data = request.get_json()
-
+        
         if 'nome' in data:
             golusema_update.nome = data['nome']
         elif 'unidade' in data:
             golusema_update.unidade = data['unidade']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(golusema_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não atualizou com sucesso"
             })
 
 
@@ -795,9 +839,9 @@ class Sabores(Resource):
                           descricao_sabor=data['descricao_sabor'])
             db.sesssion.add(sabor)
             db.session.commit()
-            message_error = "1"
+            message_error = "cadastrou com sucesso"
         except Exception:
-            message_error = "4743"
+            message_error = "não cadastrou com sucesso"
         return jsonify({
             "message_error": message_error
         })
@@ -807,13 +851,13 @@ class Sabores(Resource):
         
         sabor = Sabor.query.filter_by(venda_id=id).first()
         if sabor is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não foi econtrado"})
         try:
             db.session.delete(sabor)
             db.session.commit()
-            return jsonify({"message_error": "user not found"})
+            return jsonify({"message_error": "deletou com sucesso"})
         except Exception:
-            jsonify({"message_error": "user not found"})
+            jsonify({"message_error": "não deletou com sucesso"})
 
     @token_required
     def put(self, id):
@@ -826,11 +870,14 @@ class Sabores(Resource):
             sabor_update.descricao_sabor = data['descricao_sabor']
         else:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não informou os dados"
             })
         try:
             db.session.add(sabor_update)
             db.session.commit()
+            return jsonify({
+                "message_error": "atulaizou com sucesso"
+            })
         except Exception:
             return jsonify({
                 "msg": "msg"
@@ -899,9 +946,12 @@ class Caldas(Resource):
         try:
             db.session.add(calda_update)
             db.session.commit()
+            return jsonify({
+                "message_error":"atualizou com sucesso"
+            })
         except Exception:
             return jsonify({
-                "msg": "msg"
+                "message_error": "não cadastro com sucesso"
             })
 
 
