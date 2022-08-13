@@ -5,7 +5,7 @@ flask_bcrypt==1.0.1
 Flask_RESTful==0.3.9
 Flask_SQLAlchemy==2.5.1
 flask_swagger_ui==4.11.1
-MarkupSafe==1.1.1
+MarkupSafe==2.1.1
 PyJWT==2.4.0
 SQLAlchemy_serializer==1.4.1
 Werkzeug==2.2.2
