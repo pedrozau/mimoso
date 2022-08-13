@@ -22,7 +22,7 @@ class PedidoVenda(db.Model,SerializerMixin):
     data = db.Column(db.DateTime,nullable=False)
     quantidade = db.Column(db.Integer,nullable=False)
     total = db.Column(db.Integer,nullable=False)
-    venda_id = db.Column(db.Intger,db.ForeignKey("venda.venda_id"))
+    venda_id = db.Column(db.Integer,db.ForeignKey("venda.venda_id"))
    
     
     
