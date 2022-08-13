@@ -1,6 +1,6 @@
 Bcrypt_Flask==1.0.2
 dynaconf==3.1.9
-Flask==1.1.2
+Flask==2.1.0
 flask_bcrypt==1.0.1
 Flask_RESTful==0.3.9
 Flask_SQLAlchemy==2.5.1
