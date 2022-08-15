@@ -1,1 +1,1 @@
-web: gunicorn vite.app:create_app:app 
+web: gunicorn index:server
