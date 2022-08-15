@@ -1,6 +1,6 @@
 from flask import Flask 
 from  vite.extension import configuration 
-from vite.extensin import command
+from vite.extension import command
 
 
 
