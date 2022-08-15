@@ -1,5 +1,6 @@
 from flask import Flask 
 from  vite.extension import configuration 
+from  vite.extension import command
 
 
 
@@ -14,6 +15,7 @@ def create_app(**config):
     
     app = minimal_app(**config)
     configuration.load_extensions(app)
+    command.create_db()
     return app
 
 
