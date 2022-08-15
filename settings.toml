@@ -1,7 +1,6 @@
 [default]
 
-
-SQLALCHEMY_DATABASE_URI = " sqlite:////tmp/test.db"
+SQLALCHEMY_DATABASE_URI = 'postgres://rjeejkdozvgjhz:ebeed42c23c4231082931a246650049f9a1a0cf3d2e9a92224e24adb27d66b38@ec2-107-22-122-106.compute-1.amazonaws.com:5432/daqd5gftkiu5r2'
 
 
 TITLE = "Api mimoso"
