@@ -12,3 +12,4 @@ Werkzeug==2.2.2
 itsdangerous==2.1.2
 psycopg2==2.9.3
 python-dotenv==0.20.0
+waitress==2.1.2
