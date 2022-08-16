@@ -92,15 +92,7 @@ class Usuario(Resource):
 
     @token_required
     def get(self):
-        self.parser.add_argument('page')
-        self.parser.add_argument('limit')
-        args = self.parser.parse_args()
-        page = int(args.get('page'))
-        limit = int(args.get('limit'))
-        if not page:
-            page = 1
-        
-        user = User.query.paginate(page=page,per_page=limit)
+        user = User.query().all()
         return jsonify({"users": [users.to_dict()for users in user.items]})
         
     
