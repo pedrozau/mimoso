@@ -1,23 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   
-    <title>Document</title>
-</head>
-<body>
+{% extends "bootstrap/base.html" %}
+{% block title %}This is an example page{% endblock %}
 
-    <h1>Hello, Peter!</h1>
-    
-    <h1>UPLOAD</h1>
+{% block navbar %}
+<div class="navbar navbar-fixed-top">
+  <!-- ... -->
+</div>
+{% endblock %}
 
-
-    <form action="http://127.0.0.1:5000/api/v1/upload" method="POST" enctype="multipart/form-data" >
-    <input type="file" name="arq">
-    <input type="submit" value="ULOAD">
-    </form>
-
-</body>
-</html>
+{% block content %}
+ <form action="" method="post">
+    <input type="email" name="" id="" class="form-control">
+    <input type="password" name="" id="" class="from-control">
+    <button class="btn btn-primary" type="button">Login</button>
+ </form>
+{% endblock %}

@@ -5,6 +5,7 @@ SQLALCHEMY_DATABASE_URI = "postgresql://rjeejkdozvgjhz:ebeed42c23c4231082931a246
 TITLE = "Api mimoso"
 EXTENSIONS = [
     "vite.extension.database:init_app",
+    "vite.extension.look:init_app",
     "vite.extension.docs:init_app",
     "vite.extension.command:init_app",
     "vite.blueprint.webui:init_app",
