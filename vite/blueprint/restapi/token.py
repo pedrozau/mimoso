@@ -4,10 +4,7 @@ import datetime
 import jwt
 import os
 
-SECRET_KEY = ""
 
-def init_app(app):
-    global SECRET_KEY
 
 
 
