@@ -4,13 +4,19 @@ import datetime
 import jwt
 import os
 
+SECRET_KEY = ""
 
-#SECRET_KEY = os.environ.get("SECRET_KEY")
-SECRET_KEY = os.getenv('SECRET_KEY', '183bdd8dbb8613f4a7f74fd15b5508e7')
+def init_app(app):
+    global SECRET_KEY
+
+
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
 
 def generate_token(user_name):
 
-    return jwt.encode({'email': user_name, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=300)}, SECRET_KEY).decode('utf-8')
+    return jwt.encode({'email': user_name, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=300)}, SECRET_KEY)
 
 
 
@@ -39,3 +45,5 @@ def token_required(f):
                 "message_error":"informe the token"
             })
     return decorated
+
+
