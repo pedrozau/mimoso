@@ -1,1 +1,2 @@
-web: gunicorn vite.app:create_app()
+web: gunicorn  --workers=2 'vite.app:create_app()'
+
