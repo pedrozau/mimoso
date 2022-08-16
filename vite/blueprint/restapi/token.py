@@ -5,8 +5,8 @@ import jwt
 import os
 
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
-
+#SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.getenv('SECRET_KEY', '183bdd8dbb8613f4a7f74fd15b5508e7')
 
 def generate_token(user_name):
 
