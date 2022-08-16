@@ -99,7 +99,7 @@ class Usuario(Resource):
     def remove_space(self,value):
         return value.replace(" ","")
 
-    @token_required
+    #@token_required
     def post(self):
         message_error = ""
         data = request.get_json()
