@@ -87,13 +87,11 @@ Routa para usuarios   method get put post delete
 
 class Usuario(Resource):
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
 
-    @token_required
+    #@token_required
     def get(self):
-        user = User.query().all()
-        return jsonify({"users": [users.to_dict()for users in user.items]})
+        user = User.query.all()
+        return jsonify({"users": [users.to_dict()for users in user]})
         
     
     def remove_space(self,value):
@@ -203,18 +201,13 @@ Routa para vendas  method get put post delete
 
 class Vendas(Resource):
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
+    
 
     @token_required
     def get(self):
-        self.parser.add_argument('page') 
-        self.parser.add_argument('limit')
-        args = self.parser.parse_args()
-        page = int(args.get('page'))
-        limit = int(args.get('limit'))
-        vendas = Venda.query.paginate(page=page,per_page=limit)
-        return jsonify({"vendas": [sell.to_dict()for sell in vendas.items]})
+        
+        vendas = Venda.query.all()
+        return jsonify({"vendas": [sell.to_dict()for sell in vendas]})
 
     @token_required
     def post(self):
@@ -435,17 +428,11 @@ Routa para PedidoVenda  method get put post delete
 
 class PedidoVendas(Resource):
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
 
     @token_required
     def get(self):
-        self.parser.add_argument('page')
-        self.parser.add_argument('limit')
-        args = self.parser.parse_args()
-        page = args.get('page')
-        limit = args.get('limit')
-        pedidovenda = PedidoVenda.query.paginate(page=page,per_page=limit)
+       
+        pedidovenda = PedidoVenda.query.all()
         return jsonify({
             "pedido_venda": [pvenda.to_dict() for pvenda in pedidovenda.items]
         })
@@ -517,19 +504,14 @@ Routa para ItensPedidoVendas   method get put post delete
 
 class ItensPedidoVendas(Resource):
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
+   
 
     @token_required
     def get(self):
-        self.parser.add_argument('page')
-        self.parser.add_argument('limit')
-        args = self.parser.parse_args() 
-        page = args.get('page')
-        limit = args.get('limit')
-        itpvenda = ItensPedidoVenda.query.paginate(page=page,per_page=limit)
+       
+        itpvenda = ItensPedidoVenda.query.all()
         return jsonify({
-            "itens_pedido_venda": [itens.to_dict() for itens in itpvenda.items]
+            "itens_pedido_venda": [itens.to_dict() for itens in itpvenda]
         })
 
     @token_required
@@ -594,19 +576,14 @@ Routa para Produto   method get put post delete
 
 class Produtos(Resource): 
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
+    
 
     @token_required
     def get(self):
-        self.parser.add_argument('page')
-        self.parser.add_argument('limit')
-        args = self.parser.parse_args()
-        page = args.get('page')
-        limit = args.get('limit')
-        produto = Produto.query.pagenate(page=page,per_page=limit)
+      
+        produto = Produto.query.all()
         return jsonify({
-            "produto": [prod.to_dict() for prod in produto.items]
+            "produto": [prod.to_dict() for prod in produto]
         })
 
     @token_required

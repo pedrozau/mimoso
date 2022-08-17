@@ -1,14 +1,15 @@
 from flask import request, jsonify
+from dynaconf import settings
 from functools import wraps
 import datetime
 import jwt
-import os
 
 
 
 
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+
+SECRET_KEY = settings.get("SECRET_KEY")
 
 
 def generate_token(user_name):
@@ -28,8 +29,9 @@ def token_required(f):
             if not token['token']:
                 return jsonify({'message_error': 'Token is missing'})
             try:
-                data = jwt.decode(token['token'], SECRET_KEY)
-            except Exception:
+                data = jwt.decode(token['token'], SECRET_KEY,algorithms=['HS256'])
+            except Exception as error:
+                print(error)
                 return jsonify({'message_error': 'Token is invalid'})
 
             return f(*args, **kwargs)
