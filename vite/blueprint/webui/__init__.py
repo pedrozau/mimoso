@@ -10,4 +10,3 @@ bp.add_url_rule("/", view_func=index)
 def init_app(app):
     app.register_blueprint(bp)
     
-# port 5432
