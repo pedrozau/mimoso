@@ -177,18 +177,23 @@ Routa para ulpad de arquivos de image de usuario
 """            
 class UploadFile(Resource):
     
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
-    
     def post(self):
-         self.parser.add_argument("arq", type=werkzeug.datastructures.FileStorage, location='files')
-         args = self.parser.parse_args() 
-         arq = args.get("arq")
-         #arq = request.files['arq']
-         arq.save(path.join(UPLOAD_DIR,secure_filename(arq.filename)))
+        """
+        parse = reqparse.RequestParser()
+        parse.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
+        args = parse.parse_args()
+        image_file = args['file']
+        image_file.save("your_file_name.jpg")
+        """
+        parse = reqparse.RquestParser() 
+        parse.add_argument('file',type=werkzeug.datastructures.FileStorage, location='files')
+        args = parse.parse_args()
+        image_file =  args['file']
+        image_file = secure_filename(image_file.filename)
+        image_file.save(f"../../../static/{image_file}")
          
          return jsonify({
-              "message_error":arq
+              "message_error":"message"
           })
          
         

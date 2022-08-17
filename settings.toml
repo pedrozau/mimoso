@@ -3,7 +3,7 @@
 SQLALCHEMY_DATABASE_URI = "postgresql://postgres:1python1@localhost/mimoso"
 
 SECRET_KEY="183bdd8dbb8613f4a7f74fd15b5508e7"
-
+UPLOAD_FOLDER = ""
 TITLE = "Api mimoso"
 EXTENSIONS = [
     "vite.extension.database:init_app",
