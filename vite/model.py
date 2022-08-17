@@ -94,3 +94,5 @@ class ItensPedidoVenda(db.Model,SerializerMixin):
     sabor_id = db.Column(db.Integer,db.ForeignKey("sabor.sabor_id"))
     calda_id = db.Column(db.Integer,db.ForeignKey("calda.calda_id"))
     golusemas_id = db.Column(db.Integer,db.ForeignKey("golusemas.golusemas_id"))
+
+
