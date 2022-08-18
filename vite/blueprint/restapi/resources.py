@@ -184,7 +184,6 @@ class UploadFile(Resource):
         args = parse.parse_args()
         image_file = args['file']
         image_file.save("your_file_name.jpg")
-        """
         parse = reqparse.RquestParser() 
         parse.add_argument('file',type=werkzeug.datastructures.FileStorage, location='files')
         args = parse.parse_args()
@@ -192,7 +191,8 @@ class UploadFile(Resource):
         image_file = secure_filename(image_file.filename)
         image_file.save(f"../../../static/{image_file}")
          
-         return jsonify({
+        """
+        return jsonify({
               "message_error":"message"
           })
          
