@@ -1,5 +1,4 @@
 from flask import Blueprint
-from vite.blueprint.webui.view import auth 
 from .view import index 
 
 
