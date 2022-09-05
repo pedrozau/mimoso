@@ -171,7 +171,44 @@ class Usuario(Resource):
             return jsonify({'message_error': 'actualizou com sucesso'})
         except Exception as error:
             print(error)
+<<<<<<< HEAD
             return jsonify({'message_error': 'problema ao atualizar os dados'})
+=======
+            return jsonify({
+                "message_error": "problema ao atualizar os dados"
+            })
+            
+""" 
+Routa para ulpad de arquivos de image de usuario 
+"""            
+class UploadFile(Resource):
+    
+    def post(self):
+        """
+        parse = reqparse.RequestParser()
+        parse.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
+        args = parse.parse_args()
+        image_file = args['file']
+        image_file.save("your_file_name.jpg")
+        parse = reqparse.RquestParser() 
+        parse.add_argument('file',type=werkzeug.datastructures.FileStorage, location='files')
+        args = parse.parse_args()
+        image_file =  args['file']
+        image_file = secure_filename(image_file.filename)
+        image_file.save(f"../../../static/{image_file}")
+         
+        """
+        return jsonify({
+              "message_error":"message"
+          })
+         
+        
+           
+
+"""
+Routa para vendas  method get put post delete
+"""
+>>>>>>> 40d5a4dfbdb5a680953d97914c87a26445eb52d7
 
 
 class Vendas(Resource):
