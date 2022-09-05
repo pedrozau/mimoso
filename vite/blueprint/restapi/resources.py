@@ -1,628 +1,580 @@
+from dynaconf import settings
 from flask import jsonify, request
-from flask_restful import Resource, reqparse
-from flask_bcrypt import generate_password_hash, check_password_hash
-from markupsafe import escape 
-from vite.model import db
-from vite.model import User
-from vite.model import Venda
-from vite.model import AbrirCaixa
-from vite.model import FecharCaixa
-from vite.model import PedidoVenda
-from vite.model import ItensPedidoVenda
-from vite.model import Produto
-from vite.model import Categoria
-from vite.model import Golusemas
-from vite.model import Sabor
-from vite.model import Calda
-from .token import generate_token
-from .token import token_required 
-from os import path
-from werkzeug.utils import secure_filename
-import werkzeug 
+from flask_bcrypt import check_password_hash, generate_password_hash
+from flask_restful import Resource
+from markupsafe import escape
 
-
-
-""" 
-variavel para directorio 
-
-"""
-UPLOAD_DIR = "../../static/"
-
-
-"""
-Routa para login requesito email e senha / method post 
-"""
+from vite.extension.token import generate_token, token_required
+from vite.model import (Caixa, Calda, Categoria, FecharCaixa, Golusemas, Itens,
+                        Pedido, Produto, Sabor, User, Venda, db)
 
 
 class Login(Resource):
-    
-    def remove_space(self,value):
-        return value.replace(" ","")
+    """
+    Routa para login está route permitem para todos usuarios logar no sistema.
+    Com seguinte method post.
+    """
+
+    def remove_space(self, value):
+        return value.replace(' ', '')
 
     def post(self):
+        """Routa login para todos usuario do sistema só tem method post."""
         data = request.get_json()
-        message_error = ""
-        if data['email'] == "" or data['senha'] == "":
+        message_error = ''
+        if data['email'] != '' or data['senha'] != '':
+            data_login = User.query.filter_by(
+                email=escape(self.remove_space(data['email']))
+            ).first()
 
-            return jsonify({"message_error": "os campos estão vazios"})
+            if data_login is None:
+                message_error = 'usuario não existe'
+            elif check_password_hash(
+                data_login.senha, escape(self.remove_space(data['senha']))
+            ):
+                try:
+                    data_login.token = generate_token(data_login.email)
+                    db.session.add(data_login)
+                    db.session.commit()
 
-        data_login = User.query.filter_by(email=escape(self.remove_space(data['email']))).first()
+                except Exception:
+                    message_error = 'error ao logar'
+                return jsonify(
+                    {
+                        'id': data_login.id,
+                        'nome': data_login.nome,
+                        'email': data_login.email,
+                        'senha': data_login.senha,
+                        'token': data_login.token,
+                        'tipo_usuario': data_login.tipo_usuario,
+                    }
+                )
+            else:
+                message_error = 'a tua senha está incorreta tenta novamente'
+        else:
+            message_error = 'informa o seu email ou senha'
 
-        if data_login is None:
-
-            return jsonify({"message_error": "o usuario não existe"})
-
-        if check_password_hash(data_login.senha, escape(self.remove_space(data['senha']))):
-            try:
-                data_login.token = generate_token(data_login.email)
-                db.session.add(data_login)
-                db.session.commit()
-            except Exception as error:
-                print(error)
-                return jsonify({
-                    "message_error": ""
-                })
-
-            return jsonify({"data": data_login.to_dict()})
-
-        message_error = "a tua senha está incorreta tente novamente"
-
-        return jsonify({"message_error": message_error})
-    
-    
-"""
-Routa para usuario fazer o logout  
-"""
+        return jsonify({'message_error': message_error})
 
 
 class Logout(Resource):
-    def get(self):
-        print('')
-
-
-"""
-Routa para usuarios   method get put post delete
-"""
+    """
+    Está routa poderia usar-se para logout de usuario no sistema.
+    Mas de momento ainda não tem codigo por que o logout será.
+    Feito no frent-end.
+    """
 
 
 class Usuario(Resource):
-    
+    """
+    Está routa permite list os usuario e cadastrar no sistema.
+    Delete usuario,alteração dos dados dos usuario.
+    """
 
-    #@token_required
+    # @token_required
     def get(self):
-        user = User.query.all()
-        return jsonify({"users": [users.to_dict()for users in user]})
-        
-    
-    def remove_space(self,value):
-        return value.replace(" ","")
 
-    #@token_required
+        user = (
+            db.session.query(User, Venda, Caixa)
+            .with_entities(
+                User.id,
+                User.nome,
+                User.email,
+                User.senha,
+                User.foto,
+                User.token,
+                User.tipo_usuario,
+            )
+            .all()
+        )
+
+        return jsonify({'users': [dict(row) for row in user]})
+
+    def remove_space(self, value):
+        return value.replace(' ', '')
+
+    # @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         password_hash = generate_password_hash(
-            self.remove_space(data['senha']), 15).decode('utf-8')
-        foto = "user.png"
-        token = generate_token(data['nome'])
+            self.remove_space(data['senha']), 15
+        ).decode('utf-8')
+        url = f"{settings.get('HTTP_HOST')}/static/image/user.png"
+        print(url)
+        token = generate_token(data['email'])
 
         try:
-            user = User(nome=data['nome'], email=self.remove_space(data['email']), senha=password_hash,
-                        foto=foto, tipo_usuario=data['tipo_usuario'], token=token)
+            user = User(
+                nome=data['nome'],
+                email=self.remove_space(data['email']),
+                senha=password_hash,
+                foto=url,
+                tipo_usuario=data['tipo_usuario'],
+                token=token,
+            )
             db.session.add(user)
             db.session.commit()
-            message_error = "o usuario foi cadastrado com sucesso"
-        except Exception:
-            message_error = f"já existe usuario cadastrado com esse nome {data['nome']} "
+            message_error = 'o usuario foi cadastrado com sucesso'
+        except Exception as error:
+            print(error)
+            message_error = (
+                f"já existe usuario cadastrado com esse nome {data['nome']} "
+            )
 
-        return jsonify({
-            "message_error": message_error
-        })
+        return jsonify({'message_error': message_error})
 
-    @token_required
-    def delete(self, id):
+    # @token_required
+    def delete(self, usuario_id):
+        message_error = ''
+        if usuario_id is None:
+            message_error = 'id não foi informado'
 
-        user = User.query.filter_by(usuario_id=id).first()
+        user = User.query.filter_by(id=usuario_id).first()
 
         if user is None:
-            jsonify({"message_error": "o usuario não foi encontrado"})
-        try:
-            db.session.delete(user)
-            db.session.commit()
+            message_error = 'O usuario não foi encontrado'
+        else:
+            try:
+                db.session.delete(user)
+                db.session.commit()
+                message_error = 'O usuario foi deletado com sucesso'
+            except Exception:
+                message_error = 'O usuario não foi deletado com sucesso'
 
-            return jsonify({"message_error": "o usuario foi deletado com sucesso"})
-        except Exception as error:
-
-            return jsonify({
-                "message_error": error
-            })
+        return jsonify({'message_error': message_error})
 
     @token_required
-    def put(self, id):
-        user_update = User.query.filter_by(usuario_id=id).first()
+    def put(self, usuario_id):
+        user_update = User.query.filter_by(usuario_id=usuario_id).first()
         data = request.get_json()
-        #file = request.files['foto']
+        # file = request.files['foto']
         if 'nome' in data:
             user_update.nome = data['nome']
         elif 'email' in data:
             user_update.email = data['email']
         elif 'senha' in data:
-            password_hash = generate_password_hash(
-                data['senha'], 15).decode('utf-8')
+            password_hash = generate_password_hash(data['senha'], 15).decode(
+                'utf-8'
+            )
             user_update.senha = password_hash
         elif 'foto' in data:
-            """upload file  """
-        
-            user_update.foto = data['foto']
+            user_update.url = data['foto']
         elif 'tipo_usuario' in data:
             user_update.tipo_usuario = data['tipo_usuario']
         else:
-            return jsonify({
-                "message_error": "os campos estão vazio"
-            })
+            return jsonify({'message_error': 'os campos estão vazio'})
         try:
             db.session.add(user_update)
             db.session.commit()
-            return jsonify({
-                "message_error": "actualizou com sucesso"
-            })
+            db.session.close()
+            return jsonify({'message_error': 'actualizou com sucesso'})
         except Exception as error:
             print(error)
-            return jsonify({
-                "message_error": "problema ao atualizar os dados"
-            })
-            
-""" 
-Routa para ulpad de arquivos de image de usuario 
-"""            
-class UploadFile(Resource):
-    
-    def post(self):
-        """
-        parse = reqparse.RequestParser()
-        parse.add_argument('file', type=werkzeug.datastructures.FileStorage, location='files')
-        args = parse.parse_args()
-        image_file = args['file']
-        image_file.save("your_file_name.jpg")
-        """
-        parse = reqparse.RquestParser() 
-        parse.add_argument('file',type=werkzeug.datastructures.FileStorage, location='files')
-        args = parse.parse_args()
-        image_file =  args['file']
-        image_file = secure_filename(image_file.filename)
-        image_file.save(f"../../../static/{image_file}")
-         
-         return jsonify({
-              "message_error":"message"
-          })
-         
-        
-           
-
-"""
-Routa para vendas  method get put post delete
-"""
+            return jsonify({'message_error': 'problema ao atualizar os dados'})
 
 
 class Vendas(Resource):
-    
-    
+    """
+    Routa para listar venda e cadastrar as vendas alteração das vendas e deletar vendas.
+    """
 
-    @token_required
+    # @token_requiredS
     def get(self):
-        
-        vendas = Venda.query.all()
-        return jsonify({"vendas": [sell.to_dict()for sell in vendas]})
 
-    @token_required
+        vendas = (
+            db.session.query(Venda, User, Pedido)
+            .with_entities(
+                Venda.id, Venda.cliente, Venda.usuario_id, Venda.data_venda
+            )
+            .all()
+        )
+        return jsonify({'vendas': [dict(row) for row in vendas]})
+
+    # @token_required
     def post(self):
-        message_error = ""
+
         data = request.get_json()
-        try:
-            vendas = Venda(data=data['data'], pedidovenda_id=data['pedido_venda_id'],
-                           usuario_id=data['usuario_id'], valor=data['valor'])
-            db.session.add(vendas)
-            db.session.commit()
-            message_error = "cadastrou com sucesso"
-        except Exception as error:
-            print(error)
-            message_error = "não cadastrou com sucesso"
+        message_error = ''
 
-        return jsonify({
-            "message_error": message_error
-        })
-
-    @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "campo vazio"})
-        venda = Venda.query.filter_by(venda_id=id).first()
-        if venda is None:
-            jsonify({"message_error": "não foi econtrados as  vendas"})
-        try:
-            db.session.delete(venda)
-            db.session.commit()
-            return jsonify({"message_error": "venda foi deletado com sucesso"})
-        except Exception as error:
-            print(error)
-            jsonify({"message_error": error})
-
-    @token_required
-    def put(self, id):
-        venda_update = Venda.query.filter_by(venda_id=id).first()
-        data = request.get_json()
-        if 'data' in data:
-            venda_update.data = data['data']
-        elif 'pedidovenda_id' in data:
-            venda_update.pedidovenda_id = data['pedidovenda_id']
-        elif 'usuario_id' in data:
-            venda_update.usuario_id = data['usuario_id']
-        elif 'valor' in data:
-            venda_update.valor = data['valor']
+        if (
+            'cliente' not in data
+            or 'usuario_id' not in data
+            or 'data_venda' not in data
+        ):
+            message_error = 'informe: cliente,usuario_id,data_venda'
         else:
-            return jsonify({
-                "message": "campos vazios"
-            })
-        try:
-            db.session.add(venda_update)
-            db.session.commit()
-        except Exception as error:
-            print(error)
-            return jsonify({
-                "message": error
-            })
+            try:
+                vendas = Venda(
+                    cliente=data['cliente'],
+                    usuario_id=data['usuario_id'],
+                    data_venda=data['data_venda'],
+                )
+                db.session.add(vendas)
+                db.session.commit()
+                db.session.close()
+                message_error = 'cadastrou com sucesso'
+            except Exception as error:
+                message_error = f'não cadastrou com sucesso  {error}'
 
+        return jsonify({'message_error': message_error})
 
-"""
-Routa para Abrircaixas method get put post delete
-"""
-
-
-class AbrirCaixas(Resource):
-
-    @token_required
-    def get(self):
-        abrircaixa = AbrirCaixa.query.all()
-        return jsonify({
-            "abrir_caixa": [abrcaixa.to_dict() for abrcaixa in abrircaixa]
-        })
-
-    @token_required
-    def post(self):
-        message_error = ""
-        data = request.get_json()
-        try:
-            abrircaixa = AbrirCaixa(sumplemento=data['sumplemento'], despsas=data['despesas'], valorInicial=data['data_inicial'],
-                                    dataAbertura=data['data_abertura'], usuario_id=data['usuario_id'], total=data['total'])
-            db.session.add(abrircaixa)
-            db.session.commit()
-            message_error = "cadastrou com sucesso"
-        except Exception as error:
-            print(error)
-            message_error = error
-
-        return jsonify({
-            "message_error": message_error
-        })
-
-    @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
-        abcaixa = AbrirCaixa.query.filter_by(venda_id=id).first()
-        if abcaixa is None:
-            jsonify({"message_error": "não foi encontrado"})
-        try:
-            db.session.delete(abcaixa)
-            db.session.commit()
-            return jsonify({"message_error": "cadastrou com sucesso"})
-        except Exception as error:
-            jsonify({"message_error": error})
-
-    @token_required
-    def put(self, id):
-        acaixa_update = AbrirCaixa.query.filter_by(abrircaixa_id=id).first()
-        data = request.get_json()
-
-        if 'sumplemento' in data:
-            acaixa_update.sumplemento = data['sumplemento']
-        elif 'valor_inicial' in data:
-            acaixa_update.valorInicial = data['valor_inicial']
-        elif 'data_abertuta' in data:
-            acaixa_update.dataAbertura = data['data_abertura']
-        elif 'usuario_id' in data:
-            acaixa_update.usuario_id = data['usuario_id']
-        elif 'total' in data:
-            acaixa_update.total = data['total']
+    # @token_required
+    def delete(self, venda_id):
+        message_error = ''
+        if venda_id is None:
+            message_error = 'venda_id não foi informado'
         else:
-            return jsonify({
-                "message_error": "não foi informado os dados"
-            })
-        try:
-            db.session.add(acaixa_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
+            venda = Venda.query.filter_by(id=venda_id).first()
+            if venda is None:
+                message_error = 'não foi econtrados as  vendas'
+            try:
+                db.session.delete(venda)
+                db.session.commit()
+                db.session.close()
+                message_error = 'venda foi deletado com sucesso'
+            except Exception as error:
+                message_error = f'venda não foi deletado com sucesso {error}'
 
+        return jsonify({'message_error': message_error})
 
-"""
-Routa para Fecharcaixa  method get put post delete
-"""
+    # @token_required
+    def put(self, venda_id):
+        message_error = ''
+        if venda_id is None:
+            message_error = 'venda_id não foi informado'
+        else:
+            data = request.get_json()
+            venda_update = Venda.query.filter_by(id=id).first()
+
+            if 'cliente' in data:
+                venda_update.cliente = data['cliente']
+            elif 'usuario_id' in data:
+                venda_update.usuario_id = data['usuario_id']
+            elif 'data_venda ' in data:
+                venda_update.data_venda = data['venda_data']
+            else:
+                message_error = 'informe cliente,usuario_id,data_venda'
+
+            try:
+                db.session.add(venda_update)
+                db.session.commit()
+                message_error = 'Atualizou com sucesso'
+            except Exception as error:
+                message_error = f'Não atualizou com sucesso {error}'
+
+        return jsonify({'message_error': message_error})
 
 
 class FecharCaixas(Resource):
+    """
+    Routa para Fecharcaixa  method get put post delete.
+    """
 
     @token_required
     def get(self):
         fecharcaixa = FecharCaixa.query.all()
-        return jsonify({
-            "fechar_caixa": [fechcaixa.to_dict() for fechcaixa in fecharcaixa]
-        })
+        return jsonify(
+            {
+                'fechar_caixa': [
+                    fechcaixa.to_dict() for fechcaixa in fecharcaixa
+                ]
+            }
+        )
 
     @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
             fecharcaixa = FecharCaixa(
-                despsas=data['despesas'], dataFechamento=data['data_fechamento'], usuario_id=data['usuario_id'], total=data['total'])
+                despesa=data['despesa'],
+                dataFechamento=data['data_fechamento'],
+                usuario_id=data['usuario_id'],
+                total=data['total'],
+            )
             db.session.add(fecharcaixa)
             db.session.commit()
-            message_error = "cadastrado com sucesso"
-        except Exception:
-            message_error = "não cadastrado com sucesso"
 
-        return jsonify({
-            "message_error": message_error
-        })
+            message_error = 'cadastrado com sucesso'
+        except Exception:
+            message_error = 'não cadastrado com sucesso'
+
+        return jsonify({'message_error': message_error})
 
     @token_required
-    def delete(self,id):
-        
-        fecharcaixa = FecharCaixa.query.filter_by(venda_id=id).first()
-        if fecharcaixa is None:
-            jsonify({"message_error": "não foi encontrado"})
-        try:
-            db.session.delete(fecharcaixa)
-            db.session.commit()
-            return jsonify({"message_error": "cadastrou com sucesso"})
-        except Exception:
-            jsonify({"message_error": "não cadastrou com sucesso"})
-
-    @token_required
-    def put(self, id):
-        fcaixa_update = FecharCaixa.query.filter_by(fecharcaixa_id=id).first()
-        data = request.get_json()
-
-        if 'despesas' in data:
-            fcaixa_update.despsas = data['despesas']
-        elif 'data_fechamneto' in data:
-            fcaixa_update.dataFechamento = data['data_fechamento']
-        elif 'usuario_id' in data:
-            fcaixa_update.usuario_id = data['usuario_id']
-        elif 'total' in data:
-            fcaixa_update.total = data['total']
+    def delete(self, fechar_id):
+        message_error = ''
+        if fechar_id is None:
+            message_error = 'fechar_id não foi informado'
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
-        try:
-            db.session.add(fcaixa_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
+            fecharcaixa = FecharCaixa.query.filter_by(
+                fecharcaixa_id=fechar_id
+            ).first()
+            if fecharcaixa is None:
+                message_error = 'não foi encontrado'
+            try:
+                db.session.delete(fecharcaixa)
+                db.session.commit()
+                message_error = 'cadastrou com sucesso'
+            except Exception as error:
+                message_error = f'não cadastrou com sucesso {error}'
 
-
-"""
-Routa para PedidoVenda  method get put post delete
-"""
-
-
-class PedidoVendas(Resource):
-    
+        return jsonify({'message_error': message_error})
 
     @token_required
+    def put(self, fechar_id):
+        message_error = ''
+        if fechar_id is None:
+            message_error = 'Não foi informado fechar_id'
+        else:
+
+            fcaixa_update = FecharCaixa.query.filter_by(
+                fecharcaixa_id=fechar_id
+            ).first()
+            data = request.get_json()
+
+            if 'despesa' in data:
+                fcaixa_update.despesa = data['despesa']
+            elif 'data_fechamneto' in data:
+                fcaixa_update.dataFechamento = data['data_fechamento']
+            elif 'usuario_id' in data:
+                fcaixa_update.usuario_id = data['usuario_id']
+            elif 'total' in data:
+                fcaixa_update.total = data['total']
+            else:
+                message_error = 'não informou os dados'
+            try:
+                db.session.add(fcaixa_update)
+                db.session.commit()
+                message_error = 'atualizou com sucesso'
+            except Exception as error:
+                message_error = f'não atualizou com sucesso {error}'
+
+        return jsonify({'message_error': message_error})
+
+
+class Pedidos(Resource):
+    """
+    Routa para PedidoVenda  method get put post delete.
+    """
+
+    # @token_required
     def get(self):
-       
-        pedidovenda = PedidoVenda.query.all()
-        return jsonify({
-            "pedido_venda": [pvenda.to_dict() for pvenda in pedidovenda.items]
-        })
 
-    @token_required
+        pedidovenda = (
+            db.session.query(Pedido, Venda)
+            .join(Venda, Pedido.venda_id == Venda.id)
+            .with_entities(
+                Pedido.id,
+                Pedido.data,
+                Pedido.quantidade,
+                Pedido.total,
+                Pedido.venda_id,
+            )
+        )
+        return jsonify({'pedido': [dict(row) for row in pedidovenda]})
+
+    # @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
-            pvenda = PedidoVenda(data=data['data'], quantidade=data['quantidade'],
-                                 total=data['total'])
+            pvenda = Pedido(
+                data=data['data'],
+                quantidade=data['quantidade'],
+                total=data['total'],
+                venda_id=data['venda_id'],
+            )
             db.session.add(pvenda)
             db.session.commit()
-            message_error = "cadastrou com sucessso"
+            message_error = 'cadastrou com sucessso'
         except Exception as error:
             print(error)
-            message_error = "não cadastro com sucesso"
+            message_error = 'não cadastro com sucesso'
 
-        return jsonify({
-            "message_error": message_error
-        })
+        return jsonify({'message_error': message_error})
 
-    @token_required
-    def delete(self,id):
-        
-        pedidovenda = PedidoVenda.query.filter_by(venda_id=id).first()
-        if pedidovenda is None:
-            jsonify({"message_error": "não foi encontrado"})
-        try:
-            db.session.delete(pedidovenda)
-            db.session.commit()
-            return jsonify({"message_error": "cadastrou com sucesso"})
-        except Exception:
-            jsonify({"message_error": "não cadastrou com sucesso"})
-
-    @token_required
-    def put(self, id):
-        pv_update = PedidoVenda.query.filter_by(pedidovenda_id=id).first()
-        data = request.get_json()
-
-        if 'data' in data:
-            pv_update.data = data['data']
-        elif 'quantidade' in data:
-            pv_update.quantidade = data['quantidade']
-        elif 'total' in data:
-            pv_update.total = data['total']
-        elif 'itensPedidoVenda_id' in data:
-            pv_update.itensPedidoVenda_id = data['itensPedidoVenda_id']
+    # @token_required
+    def delete(self, pedido_id):
+        message_error = ''
+        if pedido_id is None:
+            message_error = 'pedido_id não foi informado'
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
-        try:
-            db.session.add(pv_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            return jsonify({
-                "message_error": "não atuaçizou com sucesso"
-            })
+
+            pedidovenda = Pedido.query.filter_by(id=pedido_id).first()
+            if pedidovenda is None:
+                message_error = 'não foi encontrado'
+            try:
+                db.session.delete(pedidovenda)
+                db.session.commit()
+                message_error = 'cadastrou com sucesso'
+            except Exception as error:
+                message_error = f'não cadastrou com sucesso {error}'
+        return jsonify({'message_error': message_error})
+
+    # @token_required
+    def put(self, pedido_id):
+        message_error = ''
+        if pedido_id is None:
+            message_error = 'pedido_id não foi informado'
+        else:
+            pv_update = Pedido.query.filter_by(id=pedido_id).first()
+            data = request.get_json()
+
+            if 'data' in data:
+                pv_update.data = data['data']
+            elif 'quantidade' in data:
+                pv_update.quantidade = data['quantidade']
+            elif 'total' in data:
+                pv_update.total = data['total']
+            elif 'venda_id' in data:
+                pv_update.venda_id = data['venda_id']
+            else:
+                message_error = 'não informou os dados'
+            try:
+                db.session.add(pv_update)
+                db.session.commit()
+                message_error = 'atualizou com sucesso'
+            except Exception as error:
+                message_error = f'não atuaçizou com sucesso {error}'
+        return jsonify({'message_error': message_error})
 
 
-"""
-Routa para ItensPedidoVendas   method get put post delete
-"""
+class Items(Resource):
 
+    """
+    Routa para ItensPedidoVendas   method get put post delete.
+    """
 
-class ItensPedidoVendas(Resource):
-    
-   
-
-    @token_required
+    # @token_required
     def get(self):
-       
-        itpvenda = ItensPedidoVenda.query.all()
-        return jsonify({
-            "itens_pedido_venda": [itens.to_dict() for itens in itpvenda]
-        })
 
-    @token_required
+        items = db.session.query(Itens, Pedido).with_entities().all()
+        return jsonify({'items': [itens.to_dict() for itens in items]})
+
+    # @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
-            itens = ItensPedidoVenda(
-                produto_id=data['produto_id'], quantidade=data['quantidade'])
+            itens = Itens(
+                quantidade=data['quantidade'], total_itens=data['total_itens']
+            )
             db.session.add(itens)
             db.session.commit()
-            message_error = "1"
-        except Exception:
-            message_error = "4743"
-        return jsonify({
-            "message_error": message_error
-        })
+            message_error = 'cadastrou com sucesso'
+        except Exception as error:
+            message_error = f'Não cadastrou com sucesso {error}'
+        return jsonify({'message_error': message_error})
 
-    @token_required
-    def delete(self,id):
-        
-        itens = ItensPedidoVenda.query.filter_by(venda_id=id).first()
-        if itens is None:
-            jsonify({"message_error": "user not found"})
-        try:
-            db.session.delete(itens)
-            db.session.commit()
-            return jsonify({"message_error": "user not found"})
-        except Exception:
-            jsonify({"message_error": "user not found"})
-
-    @token_required
-    def put(self, id):
-        itpv_update = ItensPedidoVenda.query.filter_by(
-            itenspedidovenda_id=id).first()
-        data = request.get_json()
-
-        if 'produto_id' in data:
-            itpv_update.produto_id = data['produto_id']
-        elif 'quantidade' in data:
-            itpv_update.quantidade = data['quantidade']
+    # @token_required
+    def delete(self, itens_id):
+        message_error = ''
+        if itens_id is None:
+            message_error = 'Não foi informado itens_id'
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
-        try:
-            db.session.add(itpv_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
+            itens = Itens.query.filter_by(id=itens_id).first()
+            if itens is None:
+                message_error = 'usuario não econtrado'
+            try:
+                db.session.delete(itens)
+                db.session.commit()
+                message_error = 'cadastrou com sucesso'
+            except Exception:
+                message_error = 'Não cadastrou com sucesso'
+
+        return jsonify({'message_error': message_error})
+
+    # @token_required
+    def put(self, itens_id):
+        message_error = ''
+        if itens_id is None:
+            message_error = 'Não foi informado itens_id'
+        else:
+            itpv_update = Itens.query.filter_by(id=itens_id).first()
+            data = request.get_json()
+
+            if 'produto_id' in data:
+                itpv_update.produto_id = data['produto_id']
+            elif 'quantidade' in data:
+                itpv_update.quantidade = data['quantidade']
+            elif 'total_itens' in data:
+                itpv_update.total_itens = data['total_itens']
+            else:
+                message_error = 'não informou os dados'
+            try:
+                db.session.add(itpv_update)
+                db.session.commit()
+                message_error = 'atualizou com sucesso'
+            except Exception:
+                message_error = 'não atualizou com sucesso'
+
+        return jsonify({'message_error': message_error})
 
 
-"""
-Routa para Produto   method get put post delete
-"""
+class Produtos(Resource):
+    """
+    Routa para Lista todos produto  method get put post delete.
+    """
 
-
-class Produtos(Resource): 
-    
-    
-
-    @token_required
+    # @token_required
     def get(self):
-      
-        produto = Produto.query.all()
-        return jsonify({
-            "produto": [prod.to_dict() for prod in produto]
-        })
 
-    @token_required
+        produto = (
+            db.session.query(Produto)
+            .with_entities(
+                Produto.produto_id,
+                Produto.produto_nome,
+                Produto.preco,
+                Produto.descricao_produto,
+                Produto.unidade,
+                Produto.itens_id,
+            )
+            .all()
+        )
+        return jsonify({'produto': [dict(row) for row in produto]})
+
+    # @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
-            prod = Produto(produto_nome=data['produto_nome'], preco=data['preco'], descricao_produto=data['descricao_produto'], unidade=data['unidade'],
-                           categoria_id=data['categoria_id'], sabor_id=data['sabor_id'], caldo_id=data['caldo_id'], golusemas_id=data['golusemas_id'])
+            prod = Produto(
+                produto_nome=data['produto_nome'],
+                preco=data['preco'],
+                descricao_produto=data['descricao_produto'],
+                unidade=data['unidade'],
+                itens_id=data['itens_id'],
+            )
             db.session.add(prod)
             db.session.commit()
-            message_error = "atualizou com sucesso"
+            message_error = 'cadastrou  com sucesso'
         except Exception:
-            message_error = "não atualizou com sucesso"
-        return jsonify({
-            "message_error": message_error
-        })
+            message_error = 'não cadastrou com sucesso'
+        return jsonify({'message_error': message_error})
 
-    @token_required
-    def delete(self,id):
-        
-        prod = Produto.query.filter_by(venda_id=id).first()
-        if prod is None:
-            jsonify({"message_error": "user not found"})
-        try:
-            db.session.delete(prod)
-            db.session.commit()
-            return jsonify({"message_error": "user not found"})
-        except Exception:
-            jsonify({"message_error": "user not found"})
+    # @token_required
+    def delete(self, produto_id):
+        message_error = ''
+        if produto_id is None:
+            message_error = 'Não foi informado produto_id'
+        else:
+            prod = Produto.query.filter_by(produto_id=produto_id).first()
+            if prod is None:
+                message_error = 'Produto não foi encontrado'
+            try:
+                db.session.delete(prod)
+                db.session.commit()
+                message_error = 'cadastrou com sucesso'
+            except Exception:
+                message_error = 'Não cadastrou com sucesso'
 
-    @token_required
-    def put(self, id):
-        produto_update = Produto.query.filter_by(produto_id=id).first()
+        return jsonify({'message_error': message_error})
+
+    # @token_required
+    def put(self, produto_id):
+        produto_update = Produto.query.filter_by(produto_id=produto_id).first()
         data = request.get_json()
 
         if 'produto_nome' in data:
@@ -633,209 +585,201 @@ class Produtos(Resource):
             produto_update.descricao_produto = data['descricao_produto']
         elif 'unidade' in data:
             produto_update.unidade = data['unidade']
-        elif 'categoria_id' in data:
-            produto_update.categoria_id = data['categoria_Id']
-        elif 'sabor_id' in data:
-            produto_update.sabor_id = data['sabor_id']
-        elif 'calda_id' in data:
-            produto_update.calda_id = data['calda_id']
-        elif 'golusemas_id' in data:
-            produto_update.golusemas_id = data['golusemas_id']
+
+        elif 'itens_id' in data:
+            produto_update.itens_id = data['itens_id']
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
+            return jsonify({'message_error': 'não informou os dados'})
         try:
             db.session.add(produto_update)
             db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
+            return jsonify({'message_error': 'atualizou com sucesso'})
         except Exception:
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
-
-
-"""
-Routa para Categoria   method get put post delete
-"""
+            return jsonify({'message_error': 'não atualizou com sucesso'})
 
 
 class Categorias(Resource):
+    """
+    Routa para Categoria   method get put post delete.
+    """
 
-    @token_required
+    # @token_required
     def get(self):
         categoria = Categoria.query.all()
-        return jsonify({
-            "categoria": [cat.to_dict() for cat in categoria]
-        })
+        return jsonify({'categoria': [cat.to_dict() for cat in categoria]})
 
-    @token_required
+    # @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
             categoria = Categoria(nome=data['nome'])
             db.session.add(categoria)
             db.session.commit()
-            message_error = "cadastrou com sucesso"
+            message_error = 'cadastrou com sucesso'
         except Exception:
-            message_error = "não cadastrou com sucesso"
-        return jsonify({
-            "message_error": message_error
-        })
+            message_error = 'não cadastrou com sucesso'
+        return jsonify({'message_error': message_error})
 
-    @token_required
-    def delete(self,id):
-        
-        categoria = Categoria.query.filter_by(venda_id=id).first()
-        if categoria is None:
-            jsonify({"message_error": "usuario não em encontrado"})
-        try:
-            db.session.delete(categoria)
-            db.session.commit()
-            return jsonify({"message_error": "user not found"})
-        except Exception:
-            jsonify({"message_error": "user not found"})
-
-    @token_required
-    def put(self, id):
-        categoria_update = Categoria.query.filter_by(sabor_id=id).first()
-        data = request.get_json()
-
-        if 'nome' in data:
-            categoria_update.nome = data['nome']
+    # @token_required
+    def delete(self, categoria_id):
+        message_error = ''
+        if categoria_id is None:
+            message_error = 'Não foi informado categoria_id'
         else:
-            return jsonify({
-                "message_error": "não informou os dados "
-            })
-        try:
-            db.session.add(categoria_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
+            categoria = Categoria.query.filter_by(
+                categoria_id=categoria_id
+            ).first()
+            if categoria is None:
+                message_error = 'categoria não em encontrado'
+            try:
+                db.session.delete(categoria)
+                db.session.commit()
+                message_error = 'cadastrou com sucesso'
+            except Exception:
+                message_error = 'Não cadastrou com sucesso'
 
+        return jsonify({'message_error': message_error})
 
-"""
-Routa para Golusemase  method get put post delete
-"""
+    @token_required
+    def put(self, categoria_id):
+
+        message_error = ''
+        if categoria_id is None:
+            message_error = 'Não foi informado categoria_id'
+        else:
+            categoria_update = Categoria.query.filter_by(
+                categoria_id=categoria_id
+            ).first()
+            data = request.get_json()
+
+            if 'nome' in data:
+                categoria_update.nome = data['nome']
+            else:
+                message_error = 'não informou os dados '
+            try:
+                db.session.add(categoria_update)
+                db.session.commit()
+                message_error = 'atualizou com sucesso'
+            except Exception:
+                message_error = 'não atualizou com sucesso'
+        return jsonify({'message_error': message_error})
 
 
 class Golusemase(Resource):
+    """
+    Routa para Golusemase  method get put post delete.
+    """
 
     @token_required
     def get(self):
         golusemas = Golusemas.query.all()
-        return jsonify({
-            "golusemas": [golese.to_dict()for golese in golusemas]
-        })
+        return jsonify(
+            {'golusemas': [golese.to_dict() for golese in golusemas]}
+        )
 
     @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
             golusemas = Golusemas(nome=data['nome'], unidade=data['unidade'])
             db.session.add(golusemas)
             db.session.commit()
-            message_error = "cadastrou com sucesso"
+            message_error = 'cadastrou com sucesso'
         except Exception:
-            message_error = "não cadasrou com sucesso"
+            message_error = 'não cadasrou com sucesso'
 
-        return jsonify({
-            "message_error": message_error
-        })
+        return jsonify({'message_error': message_error})
 
     @token_required
-    def delete(self,id):
-        
-        goluse = Golusemas.query.filter_by(venda_id=id).first()
-        if goluse is None:
-            jsonify({"message_error": "usuario não existe no sistema"})
-        try:
-            db.session.delete(goluse)
-            db.session.commit()
-            return jsonify({"message_error": "deletou com sucesso"})
-        except Exception:
-            jsonify({"message_error": "user not found"})
-
-    @token_required
-    def put(self, id):
-        golusema_update = Golusemas.query.filter_by(golusemas_id=id).first()
-        data = request.get_json()
-        
-        if 'nome' in data:
-            golusema_update.nome = data['nome']
-        elif 'unidade' in data:
-            golusema_update.unidade = data['unidade']
+    def delete(self, golusemas_id):
+        message_error = ''
+        if golusemas_id is None:
+            message_error = 'Não foi informado golusemas_id'
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
-        try:
-            db.session.add(golusema_update)
-            db.session.commit()
-            return jsonify({
-                "message_error": "atualizou com sucesso"
-            })
-        except Exception:
-            return jsonify({
-                "message_error": "não atualizou com sucesso"
-            })
+            goluse = Golusemas.query.filter_by(
+                golusemas_id=golusemas_id
+            ).first()
+            if goluse is None:
+                message_error = 'usuario não existe no sistema'
+            try:
+                db.session.delete(goluse)
+                db.session.commit()
+                message_error = 'deletou com sucesso'
+            except Exception:
+                message_error = 'Não deletou com sucesso'
+        return jsonify({'message_error': message_error})
 
+    @token_required
+    def put(self, golusemas_id):
+        message_error = ''
+        if golusemas_id is None:
+            message_error = 'Não foi informado golusemas_id'
+        else:
+            golusema_update = Golusemas.query.filter_by(
+                golusemas_id=golusemas_id
+            ).first()
+            data = request.get_json()
 
-"""
-Routa para Sabor  method get put post delete
-"""
+            if 'nome' in data:
+                golusema_update.nome = data['nome']
+            elif 'unidade' in data:
+                golusema_update.unidade = data['unidade']
+            else:
+                message_error = 'não informou os dados'
+            try:
+                db.session.add(golusema_update)
+                db.session.commit()
+                message_error = 'atualizou com sucesso'
+            except Exception:
+                message_error = 'não atualizou com sucesso'
+        return jsonify({'message_error': message_error})
 
 
 class Sabores(Resource):
+    """
+    Routa para Sabor  method get put post delete.
+    """
 
     @token_required
     def get(self):
         sabor = Sabor.query.all()
-        return jsonify({
-            "sabor": [sab.to_dict()for sab in sabor]
-        })
+        return jsonify({'sabor': [sab.to_dict() for sab in sabor]})
 
     @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
-            sabor = Sabor(nome=data['nome'],
-                          descricao_sabor=data['descricao_sabor'])
+            sabor = Sabor(
+                nome=data['nome'], descricao_sabor=data['descricao_sabor']
+            )
             db.sesssion.add(sabor)
             db.session.commit()
-            message_error = "cadastrou com sucesso"
+            message_error = 'cadastrou com sucesso'
         except Exception:
-            message_error = "não cadastrou com sucesso"
-        return jsonify({
-            "message_error": message_error
-        })
+            message_error = 'não cadastrou com sucesso'
+        return jsonify({'message_error': message_error})
 
     @token_required
-    def delete(self,id):
-        
-        sabor = Sabor.query.filter_by(venda_id=id).first()
+    def delete(self, sabor_id):
+
+        sabor = Sabor.query.filter_by(sabor_id=sabor_id).first()
         if sabor is None:
-            jsonify({"message_error": "não foi econtrado"})
+            jsonify({'message_error': 'não foi econtrado'})
         try:
             db.session.delete(sabor)
             db.session.commit()
-            return jsonify({"message_error": "deletou com sucesso"})
+            return jsonify({'message_error': 'deletou com sucesso'})
         except Exception:
-            jsonify({"message_error": "não deletou com sucesso"})
+            jsonify({'message_error': 'não deletou com sucesso'})
+
+        return jsonify({'message_error': 'message_error'})
 
     @token_required
-    def put(self, id):
-        sabor_update = Sabor.query.filter_by(sabor_id=id).first()
+    def put(self, sabor_id):
+        sabor_update = Sabor.query.filter_by(sabor_id=sabor_id).first()
         data = request.get_json()
 
         if 'nome' in data:
@@ -843,70 +787,60 @@ class Sabores(Resource):
         elif 'descricao_sabor' in data:
             sabor_update.descricao_sabor = data['descricao_sabor']
         else:
-            return jsonify({
-                "message_error": "não informou os dados"
-            })
+            return jsonify({'message_error': 'não informou os dados'})
         try:
             db.session.add(sabor_update)
             db.session.commit()
-            return jsonify({
-                "message_error": "atulaizou com sucesso"
-            })
+            return jsonify({'message_error': 'atualizou com sucesso'})
         except Exception:
-            return jsonify({
-                "msg": "msg"
-            })
+            return jsonify({'message_error': 'Não atualizou com sucesso'})
 
-
-"""
-Routa para Caldas  method get put post delete
-"""
+        return jsonify({'message_error': 'message_error'})
 
 
 class Caldas(Resource):
+    """
+    Routa para Caldas  method get put post delete.
+    """
 
     @token_required
     def get(self):
         calda = Calda.query.all()
-        return jsonify({
-            "calda": [cald.to_dict() for cald in calda]
-        })
+        return jsonify({'calda': [cald.to_dict() for cald in calda]})
 
     @token_required
     def post(self):
-        message_error = ""
+        message_error = ''
         data = request.get_json()
         try:
-            calda = Calda(nome=data['nome'],
-                          descricao_calda=data['descricao_calda'])
+            calda = Calda(
+                nome=data['nome'], descricao_calda=data['descricao_calda']
+            )
             db.session.add(calda)
             db.session.commit()
-            message_error = "1"
+            message_error = '1'
         except Exception:
-            message_error = "4743"
+            message_error = '4743'
 
-        return jsonify({
-            "message_error": message_error
-        })
+        return jsonify({'message_error': message_error})
 
     @token_required
-    def delete(self):
-        data = request.get_josn()
-        if data['id'] == "":
-            jsonify({"message_error": "user not found"})
-        calda = Calda.query.filter_by(venda_id=id).first()
+    def delete(self, calda_id):
+
+        calda = Calda.query.filter_by(calda_id=calda_id).first()
         if calda is None:
-            jsonify({"message_error": "user not found"})
+            jsonify({'message_error': 'user not found'})
         try:
             db.session.delete(calda)
             db.session.commit()
-            return jsonify({"message_error": "user not found"})
+            return jsonify({'message_error': 'user not found'})
         except Exception:
-            jsonify({"message_error": "user not found"})
+            jsonify({'message_error': 'user not found'})
+        return jsonify({'message_error': 'message_error'})
 
     @token_required
-    def put(self, id):
-        calda_update = Calda.query.filter_by(calda_id=id).first()
+    def put(self, calda_id):
+        calda_update = Calda.query.filter_by(calda_id=calda_id).first()
         data = request.get_json()
 
         if 'nome' in data:
@@ -914,27 +848,122 @@ class Caldas(Resource):
         elif 'descricao_calda' in data:
             calda_update.descricao_calda = data['descricao_calda']
         else:
-            return jsonify({
-                "msg": "msg"
-            })
+            return jsonify({'msg': 'msg'})
         try:
             db.session.add(calda_update)
             db.session.commit()
-            return jsonify({
-                "message_error":"atualizou com sucesso"
-            })
+            return jsonify({'message_error': 'atualizou com sucesso'})
         except Exception:
-            return jsonify({
-                "message_error": "não cadastro com sucesso"
-            })
+            return jsonify({'message_error': 'não cadastro com sucesso'})
+        return jsonify({'message_error': 'message_error'})
 
 
-""" 
-Routa para buscar produto   method post
-"""
+class Caixas(Resource):
+    """
+    Routa para  Caixa get,post,put, delete.
+    """
+
+    def get(self):
+        caixa = (
+            db.session.query(Caixa,FecharCaixa)
+            .with_entities(
+                Caixa.id,
+                Caixa.usuario_id,
+                Caixa.data_caixa,
+                Caixa.suplemento,
+                Caixa.total_caixa,
+            )
+            .all()
+        )
+        return jsonify({'caixa': [dict(row) for row in caixa]})
+
+    def post(self):
+        message_error = ''
+        data = request.get_json()
+        if (
+            'usuario_id' not in data
+            or 'data_caixa' not in data
+            or 'suplemento' not in data
+            or 'total_caixa' not in data
+        ):
+            message_error = (
+                'informe: usuario_id,data_caixa,suplemento,total_caixa'
+            )
+        else:
+            try:
+                total_valor = int(data['suplemento']) + int(
+                    data['total_caixa']
+                )
+                caixa_add = Caixa(
+                    usuario_id=data['usuario_id'],
+                    data_caixa=data['data_caixa'],
+                    suplemento=data['suplemento'],
+                    total_caixa=total_valor,
+                )
+                db.session.add(caixa_add)
+                db.session.commit()
+                db.session.close()
+                message_error = 'cadastrou com sucesso'
+
+            except Exception as error:
+                print(f'message: [{error}]')
+                message_error = f'não cadastrou com sucesso {error}'
+
+        return jsonify({'message_error': message_error})
+
+    def put(self, caixa_id):
+        message_error = ''
+        data = request.get_json()
+        caixa_update = Caixa.query.filter_by(id=caixa_id).first()
+
+        if 'usuario_id' in data:
+            caixa_update.usuario_id = data['usuario_id']
+        elif 'data_caixa' in data:
+            caixa_update.data_caixa = data['data_caixa']
+        elif 'suplemento' in data:
+            caixa_update.suplemento = data['suplemento']
+            total_valor = int(caixa_update.total_caixa) + int(
+                data['suplemento']
+            )
+            caixa_update.total_caixa = total_valor
+
+        elif 'total_caixa' in data:
+
+            caixa_update.total_caixa = int(data['total_caixa'])
+        else:
+            message_error = (
+                'informe: usuario_id,data_caixa,suplemento,total_caixa'
+            )
+        try:
+            db.session.add(caixa_update)
+            db.session.commit()
+            db.session.close()
+            message_error = 'Atualizou com sucesso '
+        except Exception as error:
+            message_error = f'Não atualizou com sucesso {error}'
+        return jsonify({'message_error': message_error})
+
+    def delete(self, caixa_id):
+        message_error = ''
+        caixa = Caixa.query.filter_by(id=caixa_id).first()
+        if caixa is None:
+            message_error = 'Não encontrada'
+        else:
+            try:
+                db.session.delete(caixa)
+                db.session.commit()
+
+                message_error = 'deletou com sucesso'
+            except Exception as error:
+                message_error = f'Não deletou com sucesso {error}'
+
+        return jsonify({'message_error': message_error})
 
 
 class SearchProduto(Resource):
+    """
+    Routa para buscar produto   method post.
+    """
 
     @token_required
     def post(self):
@@ -942,19 +971,18 @@ class SearchProduto(Resource):
 
         if 's_produto' in data:
             produto_search = Produto.query.filter_by(
-                produto_nome=data['s_produto']).first()
+                produto_nome=data['s_produto']
+            ).first()
 
-            return jsonify({
-                "produtos": [produto.to_dict() for produto in produto_search]
-            })
-
-
-"""
-Routa para buscar venda  method  post
-"""
+        return jsonify(
+            {'produtos': [produto.to_dict() for produto in produto_search]}
+        )
 
 
 class SearchVenda(Resource):
+    """
+    Routa Para procurar as venda no sistema methods post.
+    """
 
     @token_required
     def post(self):
@@ -962,83 +990,78 @@ class SearchVenda(Resource):
         if 'data' in data:
             s_venda = Venda.query.filter_by(data=data['data']).first()
 
-            return jsonify({
-                "venda_id":s_venda.venda_id,
-                "data":str(s_venda.data),
-                "pedido_id":s_venda.pedidovenda_id,
-                "usuario_id":s_venda.usuario_id,
-                "valor":s_venda.valor 
-            })
-
-
-"""
-Routa para buscar pedido_venda  method post
-"""
+        return jsonify(
+            {
+                'venda_id': s_venda.venda_id,
+                'data': str(s_venda.data),
+                'pedido_id': s_venda.pedidovenda_id,
+                'usuario_id': s_venda.usuario_id,
+                'valor': s_venda.valor,
+            }
+        )
 
 
 class SearchPedidoVenda(Resource):
+    """
+    Routa para buscar pedido_venda  method post.
+    """
 
-    
     def post(self):
         data = request.get_json()
         if 'data' in data:
-            s_pedido_venda = PedidoVenda.query.filter_by(
-                data=data['data']).join(Venda, PedidoVenda == Venda.venda_id).all()
-            return jsonify({
-                "pedidovenda":[pdv.to_dict() for pdv in s_pedido_venda]
-            })
-            """
-            return jsonify({
-               "pedidovenda_id":s_pedido_venda.pedidovenda_id,
-               "data":str(s_pedido_venda.data),
-               "quantidade":s_pedido_venda.quantidade,
-               "total":s_pedido_venda.total,
-               "itenspedidovenda":s_pedido_venda.itensPedidoVenda
-            })
-            """
-""" 
-Routa para buscar sabor 
-""" 
+            s_pedido_venda = (
+                Pedido.query.filter_by(data=data['data'])
+                .join(Venda, Pedido == Venda.venda_id)
+                .all()
+            )
+        return jsonify(
+            {'pedidovenda': [pdv.to_dict() for pdv in s_pedido_venda]}
+        )
+
 
 class SearchSabor(Resource):
-    
-    def post(self): 
-        data = request.get_json() 
-        sabor = Sabor.query.filter_by(nome=data['nome']).first() 
-        return jsonify({
-            "sabor_id":sabor.sabor_id,
-            "nome":sabor.nome,
-            "descricao_sabor":sabor.descricao_sabor
-        })
+    """
+    Routa para procurar  sabor no sistema.
+    """
 
-""" 
-Routa para buscar  categoria 
-"""        
+    def post(self):
+        data = request.get_json()
+        sabor = Sabor.query.filter_by(nome=data['nome']).first()
+        return jsonify(
+            {
+                'sabor_id': sabor.sabor_id,
+                'nome': sabor.nome,
+                'descricao_sabor': sabor.descricao_sabor,
+            }
+        )
+
 
 class SearchCategoria(Resource):
-    
+
+    """
+    Routa para procurar as  categoria no sistema.
+    """
+
     def post(self):
         data = request.get_json()
         categoria = Categoria.query.filter_by(nome=data['nome']).first()
-        return jsonify({
-            "categoria_id":categoria.categoria_id,
-            "nome":categoria.nome
-            
-        })
-        
-        
-"""
-Routa para buscar golusemas 
-"""     
+        return jsonify(
+            {'categoria_id': categoria.categoria_id, 'nome': categoria.nome}
+        )
 
 
-class SearchGoluma(Resource): 
-    
+class SearchGoluma(Resource):
+    """
+    Routa para procurar  golusemas no sistema pelo  seu nome.
+    """
+
     def post(self):
         data = request.get_json()
         gol = Golusemas.query.fiter_by(nome=data['nome']).first()
-        return jsonify({
-            "golusemas_id":gol.golusemas_id,
-            "nome":gol.nome,
-            "unidade":gol.unidade
-        })
+        return jsonify(
+            {
+                'golusemas_id': gol.golusemas_id,
+                'nome': gol.nome,
+                'unidade': gol.unidade,
+            }
+        )
