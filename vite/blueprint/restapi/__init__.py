@@ -1,10 +1,24 @@
 from flask import Blueprint
 from flask_restful import Api
 
-from .resources import (Caixas, Caldas, Categorias, FecharCaixas, Golusemase,
-                        Items, Login, Pedidos, Produtos, Sabores,
-                        SearchPedidoVenda, SearchProduto, SearchVenda, Usuario,
-                        Vendas)
+from .resources import (
+    Caixas,
+    Caldas,
+    Categorias,
+    FecharCaixas,
+    Golusemase,
+    Items,
+    Login,
+    Pedidos,
+    Produtos,
+    Relatorio,
+    Sabores,
+    SearchPedidoVenda,
+    SearchProduto,
+    SearchVenda,
+    Usuario,
+    Vendas,
+)
 
 bp = Blueprint('restapi', __name__, url_prefix='/api/v1')
 
@@ -29,7 +43,7 @@ api.add_resource(Golusemase, '/golusemas', '/golusema/<int:golusema_id>')
 api.add_resource(Sabores, '/sabores', '/sabor/<int:sabor_id>')
 api.add_resource(Caldas, '/caldas', '/calda/<int:calda_id>')
 api.add_resource(Caixas, '/caixas', '/caixa/<int:caixa_id>')
-
+api.add_resource(Relatorio,'/report')
 
 def init_app(app):
 

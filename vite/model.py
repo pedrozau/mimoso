@@ -56,16 +56,16 @@ class Venda(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     cliente = db.Column(db.String(30), nullable=False)
     usuario_id = db.Column(db.Integer, nullable=False)
-    data_venda = db.Column(db.DateTime, nullable=False)
+    data_venda = db.Column(db.Date, nullable=False)
     pedido = db.relationship('Pedido', backref='pedido', lazy='subquery')
 
 
 class Caixa(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    data_caixa = db.Column(db.DateTime, nullable=False)
-    suplemento = db.Column(db.Integer, nullable=False)
-    total_caixa = db.Column(db.Integer, nullable=False)
+    data_caixa = db.Column(db.Date, nullable=False)
+    suplemento = db.Column(db.Numeric, nullable=False)
+    total_caixa = db.Column(db.Numeric, nullable=False)
     fechar = db.relationship('FecharCaixa', backref='caixa', lazy='subquery')
 
 
@@ -76,14 +76,14 @@ class FecharCaixa(db.Model, SerializerMixin):
     despesa = db.Column(db.Integer, nullable=False)
     data_fechamento = db.Column(db.DateTime, nullable=False)
     caixa_id = db.Column(db.Integer, db.ForeignKey('caixa.id'))
-    total_caixa = db.Column(db.Integer, nullable=False)
+    total_caixa = db.Column(db.Numeric, nullable=False)
 
 
 class Pedido(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    data = db.Column(db.DateTime, nullable=False)
+    data = db.Column(db.Date, nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
-    total = db.Column(db.Integer, nullable=False)
+    total = db.Column(db.Numeric, nullable=False)
     venda_id = db.Column(db.Integer, db.ForeignKey('venda.id'))
     pedido_venda = db.relationship(
         'Itens',
@@ -107,7 +107,7 @@ class Itens(db.Model, SerializerMixin):
 class Produto(db.Model, SerializerMixin):
     produto_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     produto_nome = db.Column(db.String(30), nullable=False)
-    preco = db.Column(db.Integer, nullable=False)
+    preco = db.Column(db.Numeric, nullable=False)
     descricao_produto = db.Column(db.Text, nullable=False)
     unidade = db.Column(db.String(10), nullable=False)
     itens_id = db.Column(db.Integer, db.ForeignKey('itens.id'))

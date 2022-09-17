@@ -146,38 +146,40 @@ class Usuario(Resource):
 
     @token_required
     def put(self, usuario_id):
-        user_update = User.query.filter_by(usuario_id=usuario_id).first()
-        data = request.get_json()
-        # file = request.files['foto']
-        if 'nome' in data:
-            user_update.nome = data['nome']
-        elif 'email' in data:
-            user_update.email = data['email']
-        elif 'senha' in data:
-            password_hash = generate_password_hash(data['senha'], 15).decode(
-                'utf-8'
-            )
-            user_update.senha = password_hash
-        elif 'foto' in data:
-            user_update.url = data['foto']
-        elif 'tipo_usuario' in data:
-            user_update.tipo_usuario = data['tipo_usuario']
+        message_error = ''
+        if usuario_id is None:
+            message_error = 'Não informou usuario_id'
         else:
-            return jsonify({'message_error': 'os campos estão vazio'})
-        try:
-            db.session.add(user_update)
-            db.session.commit()
-            db.session.close()
-            return jsonify({'message_error': 'actualizou com sucesso'})
-        except Exception as error:
-            print(error)
-<<<<<<< HEAD
-            return jsonify({'message_error': 'problema ao atualizar os dados'})
-=======
-            return jsonify({
-                "message_error": "problema ao atualizar os dados"
-            })
-            
+            user_update = User.query.filter_by(usuario_id=usuario_id).first()
+            data = request.get_json()
+            # file = request.files['foto']
+            if 'nome' in data:
+                user_update.nome = data['nome']
+            elif 'email' in data:
+                user_update.email = data['email']
+            elif 'senha' in data:
+                password_hash = generate_password_hash(data['senha'], 15).decode(
+                    'utf-8'
+                )
+                user_update.senha = password_hash
+            elif 'foto' in data:
+                user_update.url = data['foto']
+            elif 'tipo_usuario' in data:
+                user_update.tipo_usuario = data['tipo_usuario']
+            else:
+                message_error= 'os campos estão vazio'
+            try:
+                db.session.add(user_update)
+                db.session.commit()
+                db.session.close()
+                message_error = 'atualizou com sucesso'
+            except Exception as error:
+                message_error = f'Não atualizou com sucesso {error}'
+
+        return jsonify({
+                    "message_error": message_error
+                })  
+                    
 """ 
 Routa para ulpad de arquivos de image de usuario 
 """            
@@ -208,7 +210,7 @@ class UploadFile(Resource):
 """
 Routa para vendas  method get put post delete
 """
->>>>>>> 40d5a4dfbdb5a680953d97914c87a26445eb52d7
+
 
 
 class Vendas(Resource):
@@ -1102,3 +1104,31 @@ class SearchGoluma(Resource):
                 'unidade': gol.unidade,
             }
         )
+
+class Relatorio(Resource):
+    
+    def get(self,):
+        """
+           Routa para relatorio de Venda efetuada no sistema.
+           Return relatorio mensal,trimenstrial, anoal 
+        """
+        message_error = ''
+        data = request.get_json()
+        
+
+        if 'first' != data or 'last' != data:
+            message_error = 'informe first:2022-01-01,last:2022-02-28'
+
+        else: 
+            report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['first'],data['last'])).with_entities(
+            
+                Venda.cliente,
+                Venda.data_venda,
+                Pedido.quantidade,
+                Pedido.total,
+              
+            ).all()
+
+            return jsonify({'Report':[ dict(venda) for venda in report]})
+
+        return jsonify({'message_error':message_error})

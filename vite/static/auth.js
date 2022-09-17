@@ -3,7 +3,7 @@ const app = new Vue({
     data: {
         email: '',
         password: ''
-    }
+    },
       
     methods: {
         login() {

@@ -12,14 +12,7 @@ def generate_token(user_name):
     """
     Generate token for each user in system.
     """
-    return jwt.encode(
-        {
-            'email': user_name,
-            'exp': datetime.datetime.utcnow()
-            + datetime.timedelta(minutes=300),
-        },
-        SECRET_KEY,
-    )
+    return jwt.encode({'email': user_name, 'exp': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=300))}, SECRET_KEY)
 
 
 def token_required(f):
@@ -32,7 +25,7 @@ def token_required(f):
 
         try:
 
-            token = request.get_json()
+            token = request.headers['x-access-token']
 
             if not token['token']:
                 return jsonify({'message_error': 'Token is missing'})
