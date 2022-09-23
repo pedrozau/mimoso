@@ -36,7 +36,7 @@ def token_required(f):
                 "error": "Unauthorized"
                 }, 401
             try:
-                return jwt.decode(
+                data = jwt.decode(
                     token, SECRET_KEY, algorithms=['HS256']
                 )
             except Exception as error:
