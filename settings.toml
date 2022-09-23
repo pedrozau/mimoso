@@ -3,7 +3,7 @@
 SQLALCHEMY_DATABASE_URI = "postgresql://postgres:root@localhost/mimoso"
 
 SECRET_KEY = "183bdd8dbb8613f4a7f74fd15b5508e7"
-HTTP_HOST = "http://192.168.0.101:5000"
+HTTP_HOST = "http://mimoso.herokuapp.com/"
 UPLOAD_FOLDER = ""
 TITLE = "Api mimoso"
 EXTENSIONS = [
