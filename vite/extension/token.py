@@ -18,6 +18,7 @@ def generate_token(user_name):
 def token_required(f):
     """
     Verify the token for each user in the system.
+    Authorization'
     """
 
     @wraps(f)
@@ -25,7 +26,7 @@ def token_required(f):
 
         try:
 
-            token = request.headers['x-access-token']
+            token = request.headers.get("Authorization")
 
             if not token['token']:
                 return jsonify({'message_error': 'Token is missing'})
