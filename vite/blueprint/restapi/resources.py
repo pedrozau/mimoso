@@ -71,7 +71,7 @@ class Usuario(Resource):
     Delete usuario,alteração dos dados dos usuario.
     """
 
-    # @token_required
+    @token_required
     def get(self):
 
         user = (
@@ -93,7 +93,7 @@ class Usuario(Resource):
     def remove_space(self, value):
         return value.replace(' ', '')
 
-    # @token_required
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -124,7 +124,7 @@ class Usuario(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, usuario_id):
         message_error = ''
         if usuario_id is None:
@@ -218,7 +218,7 @@ class Vendas(Resource):
     Routa para listar venda e cadastrar as vendas alteração das vendas e deletar vendas.
     """
 
-    # @token_requiredS
+    @token_required
     def get(self):
 
         vendas = (
@@ -230,7 +230,7 @@ class Vendas(Resource):
         )
         return jsonify({'vendas': [dict(row) for row in vendas]})
 
-    # @token_required
+    @token_required
     def post(self):
 
         data = request.get_json()
@@ -258,7 +258,7 @@ class Vendas(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, venda_id):
         message_error = ''
         if venda_id is None:
@@ -277,7 +277,7 @@ class Vendas(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def put(self, venda_id):
         message_error = ''
         if venda_id is None:
@@ -398,7 +398,7 @@ class Pedidos(Resource):
     Routa para PedidoVenda  method get put post delete.
     """
 
-    # @token_required
+    @token_required
     def get(self):
 
         pedidovenda = (
@@ -414,7 +414,7 @@ class Pedidos(Resource):
         )
         return jsonify({'pedido': [dict(row) for row in pedidovenda]})
 
-    # @token_required
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -434,7 +434,7 @@ class Pedidos(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, pedido_id):
         message_error = ''
         if pedido_id is None:
@@ -452,7 +452,7 @@ class Pedidos(Resource):
                 message_error = f'não cadastrou com sucesso {error}'
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def put(self, pedido_id):
         message_error = ''
         if pedido_id is None:
@@ -486,13 +486,13 @@ class Items(Resource):
     Routa para ItensPedidoVendas   method get put post delete.
     """
 
-    # @token_required
+    @token_required
     def get(self):
 
         items = db.session.query(Itens, Pedido).with_entities().all()
         return jsonify({'items': [itens.to_dict() for itens in items]})
 
-    # @token_required
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -507,7 +507,7 @@ class Items(Resource):
             message_error = f'Não cadastrou com sucesso {error}'
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, itens_id):
         message_error = ''
         if itens_id is None:
@@ -525,7 +525,7 @@ class Items(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def put(self, itens_id):
         message_error = ''
         if itens_id is None:
@@ -557,7 +557,7 @@ class Produtos(Resource):
     Routa para Lista todos produto  method get put post delete.
     """
 
-    # @token_required
+    @token_required
     def get(self):
 
         produto = (
@@ -574,7 +574,7 @@ class Produtos(Resource):
         )
         return jsonify({'produto': [dict(row) for row in produto]})
 
-    # @token_required
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -593,7 +593,7 @@ class Produtos(Resource):
             message_error = 'não cadastrou com sucesso'
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, produto_id):
         message_error = ''
         if produto_id is None:
@@ -611,7 +611,7 @@ class Produtos(Resource):
 
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def put(self, produto_id):
         produto_update = Produto.query.filter_by(produto_id=produto_id).first()
         data = request.get_json()
@@ -647,7 +647,7 @@ class Categorias(Resource):
         categoria = Categoria.query.all()
         return jsonify({'categoria': [cat.to_dict() for cat in categoria]})
 
-    # @token_required
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -660,7 +660,7 @@ class Categorias(Resource):
             message_error = 'não cadastrou com sucesso'
         return jsonify({'message_error': message_error})
 
-    # @token_required
+    @token_required
     def delete(self, categoria_id):
         message_error = ''
         if categoria_id is None:
@@ -901,7 +901,7 @@ class Caixas(Resource):
     """
     Routa para  Caixa get,post,put, delete.
     """
-
+    @token_required
     def get(self):
         caixa = (
             db.session.query(Caixa,FecharCaixa)
@@ -915,7 +915,7 @@ class Caixas(Resource):
             .all()
         )
         return jsonify({'caixa': [dict(row) for row in caixa]})
-
+    @token_required
     def post(self):
         message_error = ''
         data = request.get_json()
@@ -950,6 +950,7 @@ class Caixas(Resource):
 
         return jsonify({'message_error': message_error})
 
+    @token_required
     def put(self, caixa_id):
         message_error = ''
         data = request.get_json()
@@ -981,7 +982,7 @@ class Caixas(Resource):
         except Exception as error:
             message_error = f'Não atualizou com sucesso {error}'
         return jsonify({'message_error': message_error})
-
+    @token_required
     def delete(self, caixa_id):
         message_error = ''
         caixa = Caixa.query.filter_by(id=caixa_id).first()
@@ -1062,7 +1063,7 @@ class SearchSabor(Resource):
     """
     Routa para procurar  sabor no sistema.
     """
-
+    @token_required
     def post(self):
         data = request.get_json()
         sabor = Sabor.query.filter_by(nome=data['nome']).first()
@@ -1080,7 +1081,7 @@ class SearchCategoria(Resource):
     """
     Routa para procurar as  categoria no sistema.
     """
-
+    @token_required
     def post(self):
         data = request.get_json()
         categoria = Categoria.query.filter_by(nome=data['nome']).first()
@@ -1093,7 +1094,7 @@ class SearchGoluma(Resource):
     """
     Routa para procurar  golusemas no sistema pelo  seu nome.
     """
-
+    @token_required
     def post(self):
         data = request.get_json()
         gol = Golusemas.query.fiter_by(nome=data['nome']).first()
@@ -1107,6 +1108,7 @@ class SearchGoluma(Resource):
 
 class Relatorio(Resource):
     
+    @token_required
     def get(self,):
         """
            Routa para relatorio de Venda efetuada no sistema.
