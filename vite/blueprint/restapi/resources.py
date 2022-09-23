@@ -21,38 +21,41 @@ class Login(Resource):
     def post(self):
         """Routa login para todos usuario do sistema só tem method post."""
         data = request.get_json()
-        message_error = ''
-        if data['email'] != '' or data['senha'] != '':
-            data_login = User.query.filter_by(
-                email=escape(self.remove_space(data['email']))
-            ).first()
-
-            if data_login is None:
-                message_error = 'usuario não existe'
-            elif check_password_hash(
-                data_login.senha, escape(self.remove_space(data['senha']))
-            ):
-                try:
-                    data_login.token = generate_token(data_login.email)
-                    db.session.add(data_login)
-                    db.session.commit()
-
-                except Exception:
-                    message_error = 'error ao logar'
-                return jsonify(
-                    {
-                        'id': data_login.id,
-                        'nome': data_login.nome,
-                        'email': data_login.email,
-                        'senha': data_login.senha,
-                        'token': data_login.token,
-                        'tipo_usuario': data_login.tipo_usuario,
-                    }
-                )
-            else:
-                message_error = 'a tua senha está incorreta tenta novamente'
+        message_error = '' 
+        if data is not 'email' or data is not 'senha':
+            message_error = "Informe email,senha"
         else:
-            message_error = 'informa o seu email ou senha'
+            if data['email'] != '' or data['senha'] != '':
+                data_login = User.query.filter_by(
+                    email=escape(self.remove_space(data['email']))
+                ).first()
+
+                if data_login is None:
+                    message_error = 'usuario não existe'
+                elif check_password_hash(
+                    data_login.senha, escape(self.remove_space(data['senha']))
+                ):
+                    try:
+                        data_login.token = generate_token(data_login.email)
+                        db.session.add(data_login)
+                        db.session.commit()
+
+                    except Exception:
+                        message_error = 'error ao logar'
+                    return jsonify(
+                        {
+                            'id': data_login.id,
+                            'nome': data_login.nome,
+                            'email': data_login.email,
+                            'senha': data_login.senha,
+                            'token': data_login.token,
+                            'tipo_usuario': data_login.tipo_usuario,
+                        }
+                    )
+                else:
+                    message_error = 'a tua senha está incorreta tenta novamente'
+            else:
+                message_error = 'informa o seu email ou senha'
 
         return jsonify({'message_error': message_error})
 
