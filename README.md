@@ -2,6 +2,9 @@
 
 * /app/docs documentação para o api 
 
+* token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBlZHJvIiwiZXhwIjozNDY0MDE2NjMwfQ.dNN-PsrBwu6J7hRB_zqKjlkDAoStk2aiwq-Tqw2bVpE
+
+
 * Estrutura do projecto 
 
 .
