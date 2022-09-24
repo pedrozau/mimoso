@@ -1121,7 +1121,7 @@ class Relatorio(Resource):
         data = request.get_json()
         
 
-        if 'first' != data or 'last' != data:
+        if 'first' != data and 'last' != data:
             message_error = 'informe first:2022-01-01,last:2022-02-28'
 
         else: 
