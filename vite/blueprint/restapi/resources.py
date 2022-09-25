@@ -1130,7 +1130,7 @@ class Relatorio(Resource):
                     Pedido.quantidade,
                     Pedido.total,
                 
-                ).all()
+                 ).all()
                message_error = {'Report':[ dict(venda) for venda in report]}
              else:
                 message_error = "Campos vazio"
