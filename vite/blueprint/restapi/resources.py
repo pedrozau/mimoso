@@ -1121,11 +1121,11 @@ class Relatorio(Resource):
         data = request.get_json()
         
 
-        if 'first' is not data and 'last' is not data:
-            message_error = 'informe first:2022-01-01,last:2022-02-28'
+        if 'data_inicial' is not data or 'data_final' is not data:
+            message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
         else: 
-            report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['first'],data['last'])).with_entities(
+            report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
             
                 Venda.cliente,
                 Venda.data_venda,
@@ -1134,6 +1134,6 @@ class Relatorio(Resource):
               
             ).all()
 
-            return jsonify({'Report':[ dict(venda) for venda in report]})
+            return jsonify({'Relatório':[ dict(venda) for venda in report]})
 
         return jsonify({'message_error':message_error})
