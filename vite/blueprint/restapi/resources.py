@@ -1120,7 +1120,6 @@ class Relatorio(Resource):
         message_error = ''
         data = request.get_json()
         
-
         if data is not 'data_inicial' or  data is not 'data_final':
             if data['data_inicial'] == "" or data['data_final'] == "":
                 report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
@@ -1130,8 +1129,8 @@ class Relatorio(Resource):
                     Pedido.quantidade,
                     Pedido.total,
                 
-                 ).all()
-                 return jsonify({'Report':[dict(venda) for venda in report]})
+                ).all()
+                return jsonify({'Report':[dict(venda) for venda in report]})
             else:
                 message_error = "Campos vazio"
         else: 
