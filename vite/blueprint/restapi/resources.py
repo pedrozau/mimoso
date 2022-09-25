@@ -1112,7 +1112,7 @@ class SearchGoluma(Resource):
 class Relatorio(Resource):
     
     @token_required
-    def get(self,):
+    def get(self):
         """
            Routa para relatorio de Venda efetuada no sistema.
            Return relatorio mensal,trimenstrial, anoal 
