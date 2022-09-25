@@ -1121,7 +1121,7 @@ class Relatorio(Resource):
         data = request.get_json()
         
 
-        if 'data_inicial' is not data or 'data_final' is not data:
+        if data is not 'data_inicial' or  data is not 'data_final':
             message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
         else: 
