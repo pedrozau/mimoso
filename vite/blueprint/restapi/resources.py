@@ -1122,9 +1122,7 @@ class Relatorio(Resource):
         
 
         if data is not 'data_inicial' or  data is not 'data_final':
-            message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
-        else: 
             report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
             
                 Venda.cliente,
@@ -1135,5 +1133,7 @@ class Relatorio(Resource):
             ).all()
 
             return jsonify({'Relatório':[ dict(venda) for venda in report]})
+        else: 
+            message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
         return jsonify({'message_error':message_error})
