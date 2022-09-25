@@ -1121,7 +1121,7 @@ class Relatorio(Resource):
         data = request.get_json()
         
         if data is not 'data_inicial' or  data is not 'data_final':
-            if data['data_inicial'] == "" or data['data_final'] == "":
+            if data['data_inicial'] != "" or data['data_final'] != "":
                 report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
                 
                     Venda.cliente,
