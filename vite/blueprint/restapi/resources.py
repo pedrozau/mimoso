@@ -1131,10 +1131,10 @@ class Relatorio(Resource):
                     Pedido.total,
                 
                  ).all()
-               message_error = {'Report':[ dict(venda) for venda in report]}
-             else:
+                 return jsonify({'Report':[dict(venda) for venda in report]})
+            else:
                 message_error = "Campos vazio"
         else: 
             message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
-        return jsonify({'Data':message_error})
+        return jsonify({'message_error':message_error})
