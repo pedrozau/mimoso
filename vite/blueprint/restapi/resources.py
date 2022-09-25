@@ -1122,18 +1122,19 @@ class Relatorio(Resource):
         
 
         if data is not 'data_inicial' or  data is not 'data_final':
-
-            report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
-            
-                Venda.cliente,
-                Venda.data_venda,
-                Pedido.quantidade,
-                Pedido.total,
-              
-            ).all()
-
-            return jsonify({'Report':[ dict(venda) for venda in report]})
+            if data['data_inicial'] == "" or data['data_final'] == "":
+                report = db.session.query(Venda,User,Pedido).filter(Venda.data_venda.between(data['data_inicial'],data['data_final'])).with_entities(
+                
+                    Venda.cliente,
+                    Venda.data_venda,
+                    Pedido.quantidade,
+                    Pedido.total,
+                
+                ).all()
+               message_error = {'Report':[ dict(venda) for venda in report]}
+             else:
+                message_error = "Campos vazio"
         else: 
             message_error = 'informe data_inicial:2022-01-01,data_final:2022-02-28'
 
-        return jsonify({'message_error':message_error})
+        return jsonify({'Data':message_error})
