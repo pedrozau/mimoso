@@ -1,7 +1,7 @@
 from vite.extension.database import db
 
 
-def create_db():
+def create_db():                        
     """Create database."""
     db.create_all()
 
