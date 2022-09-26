@@ -22,7 +22,7 @@ class Login(Resource):
         """Routa login para todos usuario do sistema só tem method post."""
         data = request.get_json()
         message_error = '' 
-        if data is not 'email' and data is not 'senha':
+        if data is None:
             message_error = "Não informaste os campos em formato json: email,senha"
         else:
             if data['email'] != '' and data['senha'] != '':
