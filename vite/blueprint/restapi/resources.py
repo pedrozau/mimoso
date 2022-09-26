@@ -23,7 +23,7 @@ class Login(Resource):
         data = request.get_json()
         message_error = '' 
         if data is not 'email' or data is not 'senha':
-            message_error = "Informe email,senha"
+            message_error = "Não informaste os campos em formato json: email,senha"
         else:
             if data['email'] != '' or data['senha'] != '':
                 data_login = User.query.filter_by(
@@ -55,7 +55,7 @@ class Login(Resource):
                 else:
                     message_error = 'a tua senha está incorreta tenta novamente'
             else:
-                message_error = 'informa o seu email ou senha'
+                message_error = 'Campos json email,senha'
 
         return jsonify({'message_error': message_error})
 
